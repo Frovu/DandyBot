@@ -16,6 +16,8 @@ LEFT = "left"
 RIGHT = "right"
 TAKE = "take"
 PASS = "pass"
+
+LEVEL = "level"
 PLAYER = "player"
 GOLD = "gold"
 WALL = "wall"
@@ -80,21 +82,21 @@ class Board:
         self.update(x, y)
 
     def take_gold(self, x, y):
-        self.gold += self.check("gold", x, y)
+        self.gold += self.check(GOLD, x, y)
         self.map[x][y] = " "
         self.update(x, y)
         self.update_score()
 
     def check(self, cmd, *args):
-        if cmd == "level":
+        if cmd == LEVEL:
             return self.level_index + 1
         x, y = args
         item = self.get(x, y)
-        if cmd == "wall":
+        if cmd == WALL:
             return item == "#"
-        if cmd == "gold":
+        if cmd == GOLD:
             return int(item) if item.isdigit() else 0
-        if cmd == "player":
+        if cmd == PLAYER:
             return item != "#" and self.has_player[x][y]
 
     def play(self):
@@ -147,12 +149,12 @@ class Player:
         x, y = self.x + dx, self.y + dy
         board = self.board
         board.remove_player(self)
-        if not board.check("wall", x, y) and not board.check("player", x, y):
+        if not board.check(WALL, x, y) and not board.check(PLAYER, x, y):
             self.x, self.y = x, y
         board.add_player(self, self.x, self.y)
 
     def take(self):
-        gold = self.board.check("gold", self.x, self.y)
+        gold = self.board.check(GOLD, self.x, self.y)
         if gold:
             self.gold += gold
             self.board.take_gold(self.x, self.y)
