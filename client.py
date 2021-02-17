@@ -10,6 +10,7 @@ from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
 SP_DELAY = 100
+LAST_BOT = ".lastbot"
 
 class Client:
     def __init__(self):
@@ -29,7 +30,7 @@ class Client:
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
         self.board = Board(tileset, canvas, label)
 
-        lastbot = Path(".lastbot")
+        lastbot = Path(LAST_BOT)
         if lastbot.exists() and Path(lastbot.read_text()).exists():
             self.bot = Path(lastbot.read_text())
         else:
@@ -49,7 +50,7 @@ class Client:
         self.board.load(self.game.get("maps")[0], self.game.get("tiles"))
 
     def add_menu_button(self, name, text, handler):
-        self.menu[name] = b = tk.Button(self.m_frame, text=text, fg="gray10", bg="gray30")
+        self.menu[name] = b = tk.Button(self.m_frame, text=text, fg="gray1", bg="gray30")
         b.config(command=handler)
         b.pack(side=tk.TOP, padx=1, fill="x")
 
@@ -66,6 +67,7 @@ class Client:
             self.bot = Path(newbot)
             self.bot_label["text"] = f"bot: {self.bot.stem}"
             self.bot_label["fg"] = "green"
+            Path(LAST_BOT).write_text(str(self.bot))
 
     def start_sp(self):
         game = Singleplayer(self.board, DATA_DIR)
