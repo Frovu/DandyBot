@@ -17,7 +17,7 @@ class Client:
         canvas = tk.Canvas(root, bg="black", highlightthickness=0)
         canvas.pack(side=tk.LEFT)
         self.m_frame = frame = tk.Frame(root)
-        frame.pack(side=tk.LEFT, anchor="n")
+        frame.pack(side=tk.RIGHT, anchor="n")
         label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, fg="white", bg="gray20")
         label.pack(side=tk.TOP, anchor="n")
