@@ -45,6 +45,8 @@ class Game:
         self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
         self.update_score()
+        for p in self.players:
+            self.add_player(p, *self.level["start"])
 
     def get(self, x, y):
         if x < 0 or y < 0 or x >= self.cols or y >= self.rows:

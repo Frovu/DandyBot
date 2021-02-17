@@ -8,7 +8,7 @@ from board import Board
 from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
-SP_DELAY = 50
+SP_DELAY = 100
 
 class Client:
     def __init__(self):
@@ -28,9 +28,12 @@ class Client:
         self.board = Board(tileset, canvas, label)
         #root.after(0, update)
 
-        self.start_sp()
+        self.init_level()
         self.show_menu()
         root.mainloop()
+
+    def init_level(self):
+        self.board.load(self.game.get("maps")[0], self.game.get("tiles"))
 
     def show_menu(self):
         b_sp = tk.Button(self.m_frame, text="single player")

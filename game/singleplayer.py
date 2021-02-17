@@ -12,4 +12,8 @@ class Singleplayer:
         self.board.load(map, game.get("tiles"))
 
     def play(self):
-        self.game.play()
+        cont = self.game.play()
+        if cont:
+            map, players = self.game.fetch()
+            self.board.update(map, players)
+        return cont
