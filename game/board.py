@@ -24,7 +24,6 @@ class Board:
             for x in range(len(map[0])):
                 self.screen.set_tile(x, y, self.tiles[map[y][x]]) # TODO: .get("grid")
         for p in players:
-            print(p.name, p.x, p.y)
             self.screen.set_tile(p.x, p.y, p.tile)
         score_lines = [("Level:%s\n" % ("asdsadsadads"))] # TODO: map.get("title")
         for p in sorted(players, key=lambda x: x.gold, reverse=True):
