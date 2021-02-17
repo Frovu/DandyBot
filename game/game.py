@@ -4,11 +4,6 @@ import json
 from importlib import import_module
 from pathlib import Path
 from random import randrange, shuffle
-import tkinter as tk
-from plitk import load_tileset, PliTk
-
-SCALE = 1
-DELAY = 50
 
 UP = "up"
 DOWN = "down"
@@ -159,29 +154,3 @@ class Player:
         if gold:
             self.gold += gold
             self.board.take_gold(self.x, self.y)
-
-
-def start_game():
-    def update():
-        t = time.time()
-        if board.play():
-            dt = int((time.time() - t) * 1000)
-            root.after(max(DELAY - dt, 0), update)
-        else:
-            label["text"] += "\n\nGAME OVER!"
-
-    root = tk.Tk()
-    root.configure(background="black")
-    canvas = tk.Canvas(root, bg="black", highlightthickness=0)
-    canvas.pack(side=tk.LEFT)
-    label = tk.Label(root, font=("TkFixedFont",),
-                     justify=tk.RIGHT, fg="white", bg="gray20")
-    label.pack(side=tk.RIGHT, anchor="n")
-    filename = sys.argv[1] if len(sys.argv) == 2 else "game.json"
-    game = json.loads(Path(filename).read_text())
-    board = Board(game, canvas, label)
-    root.after(0, update)
-    root.mainloop()
-
-
-start_game()
