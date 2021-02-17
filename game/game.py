@@ -5,6 +5,8 @@ from importlib import import_module
 from pathlib import Path
 from random import randrange, shuffle
 
+sys.path.insert(0, './bots')
+
 UP = "up"
 DOWN = "down"
 LEFT = "left"
@@ -19,13 +21,9 @@ WALL = "wall"
 EMPTY = "empty"
 
 
-class Board:
-    def __init__(self, game, canvas, label):
+class Game:
+    def __init__(self, game):
         self.game = game
-        self.canvas = canvas
-        self.label = label
-        self.tileset = load_tileset(game["tileset"])
-        self.screen = PliTk(canvas, 0, 0, 0, 0, self.tileset, SCALE)
         self.load_players()
         self.level_index = 0
         self.load_level()
@@ -43,29 +41,15 @@ class Board:
         self.steps = 0
         self.level = self.game["levels"][self.level_index]
         data = self.game["maps"][self.level["map"]]
-        cols, rows = len(data[0]), len(data)
-        self.map = [[data[y][x] for y in range(rows)] for x in range(cols)]
+        self.cols, self.rows = cols, rows = len(data[0]), len(data)
+        self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
-        self.canvas.config(width=cols * self.tileset["tile_width"] * SCALE,
-                           height=rows * self.tileset["tile_height"] * SCALE)
-        self.screen.resize(cols, rows)
-        for y in range(rows):
-            for x in range(cols):
-                self.update(x, y)
-        for p in self.players:
-            self.add_player(p, *self.level["start"])
         self.update_score()
 
     def get(self, x, y):
-        if x < 0 or y < 0 or x >= self.screen.cols or y >= self.screen.rows:
+        if x < 0 or y < 0 or x >= self.cols or y >= self.rows:
             return "#"
-        return self.map[x][y]
-
-    def update(self, x, y):
-        if self.has_player[x][y]:
-            self.screen.set_tile(x, y, self.has_player[x][y].tile)
-        else:
-            self.screen.set_tile(x, y, self.game["tiles"][self.map[x][y]])
+        return self.map[y][x]
 
     def remove_player(self, player):
         self.has_player[player.x][player.y] = None
@@ -78,7 +62,7 @@ class Board:
 
     def take_gold(self, x, y):
         self.gold += self.check(GOLD, x, y)
-        self.map[x][y] = " "
+        self.map[y][x] = " "
         self.update(x, y)
         self.update_score()
 
@@ -103,19 +87,21 @@ class Board:
         self.steps += 1
         return self.steps < self.level["steps"]
 
-    def update_score(self):
-        lines = [("Level:%4d\n" % (self.level_index + 1))]
-        players = sorted(self.players, key=lambda x: x.gold, reverse=True)
-        for p in players:
-            lines.append("%s:%4d" % (p.name, p.gold))
-        self.label["text"] = "\n".join(lines)
-
     def next_level(self):
         self.level_index += 1
         if self.level_index < len(self.game["levels"]):
             self.load_level()
             return True
         return False
+
+    def update(self, x, y):
+        pass
+
+    def update_score(self):
+        pass
+
+    def fetch(self):
+        return self.map, self.players
 
 
 class Player:

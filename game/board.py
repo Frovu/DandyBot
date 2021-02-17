@@ -20,7 +20,6 @@ class Board:
         self.update(map, [])
 
     def update(self, map, players):
-        print(len(map), len(map[0]))
         for y in range(len(map)):
             for x in range(len(map[0])):
                 self.screen.set_tile(x, y, self.tiles[map[y][x]]) # TODO: .get("grid")

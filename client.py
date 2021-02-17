@@ -1,11 +1,14 @@
 import sys
 import json
+import time
 from pathlib import Path
 import tkinter as tk
 sys.path.insert(0, './game')
 from board import Board
+from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
+SP_DELAY = 50
 
 class Client:
     def __init__(self):
@@ -25,12 +28,9 @@ class Client:
         self.board = Board(tileset, canvas, label)
         #root.after(0, update)
 
-        self.init_level()
+        self.start_sp()
         self.show_menu()
         root.mainloop()
-
-    def init_level(self):
-        self.board.load(self.game.get("maps")[0], self.game.get("tiles"))
 
     def show_menu(self):
         b_sp = tk.Button(self.m_frame, text="single player")
@@ -44,20 +44,17 @@ class Client:
         b_exit.pack(side=tk.TOP)
 
     def start_sp(self):
-        pass
+        game = Singleplayer(self.board, DATA_DIR)
+        def update():
+            t = time.time()
+            if game.play():
+                dt = int((time.time() - t) * 1000)
+                self.root.after(max(SP_DELAY - dt, 0), update)
+            else:
+                self.board.label["text"] += "\n\nGAME OVER!"
+        self.root.after(0, update)
 
     def start_mp(self):
         pass
-
-
-def start_single():
-    def update():
-        t = time.time()
-        if board.play():
-            dt = int((time.time() - t) * 1000)
-            root.after(max(DELAY - dt, 0), update)
-        else:
-            label["text"] += "\n\nGAME OVER!"
-
 
 client = Client()
