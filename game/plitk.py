@@ -2,13 +2,6 @@
 from pathlib import Path
 import tkinter as tk
 
-
-def load_tileset(filename):
-    tileset = json.loads(Path(filename).read_text())
-    tileset["data"] = Path(tileset["file"]).read_bytes()
-    return tileset
-
-
 def get_tile_ppm(tileset, index):
     x = tileset["tile_width"] * (index % tileset["columns"])
     y = tileset["tile_height"] * (index // tileset["columns"])
@@ -18,7 +11,6 @@ def get_tile_ppm(tileset, index):
         data += tileset["data"][i * 3: i * 3 + tileset["tile_width"] * 3]
     return bytes("P6\n%d %d\n255\n" % (tileset["tile_width"],
                                        tileset["tile_height"]), "ascii") + data
-
 
 class PliTk:
     def __init__(self, canvas, x, y, cols, rows, tileset, scale):
