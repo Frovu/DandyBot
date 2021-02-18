@@ -5,6 +5,7 @@ from pathlib import Path
 import tkinter as tk
 import tkinter.filedialog
 sys.path.insert(0, './game')
+from plitk import PliTk
 from board import Board
 from singleplayer import Singleplayer
 
@@ -42,6 +43,27 @@ class Client:
         self.bot_label["text"] = f"bot: {self.bot.stem if self.bot else 'undefined'}"
         self.bot_label["fg"] = "green" if self.bot else "red"
 
+        ##### Tile selector #####
+        tile_frame = tk.Frame(frame, bg="black")
+        tile_frame.pack(side=tk.TOP)
+        btn_left = tk.Button(tile_frame, text="<", fg="gray1", bg="gray30", highlightthickness=0)
+        btn_right = tk.Button(tile_frame, text=">", fg="gray1", bg="gray30", highlightthickness=0)
+        tile_canvas = tk.Canvas(tile_frame, bg="black", highlightthickness=0)
+        tile_canvas.config(width=tileset["tile_width"], height=tileset["tile_height"])
+        btn_left.pack(side=tk.LEFT, padx=3, pady=3)
+        tile_canvas.pack(side=tk.LEFT)
+        btn_right.pack(side=tk.LEFT, padx=3, pady=3)
+        tile_plitk = PliTk(tile_canvas, 0, 0, 1, 1, tileset, 1)
+
+        # TODO: restrict choice
+        def switch_tile(n):
+            tile_plitk.set_tile(0, 0, n)
+            self.tile = n
+        switch_tile(2138)
+        btn_left.config(command=lambda: switch_tile(self.tile-1))
+        btn_right.config(command=lambda: switch_tile(self.tile+1))
+
+
         self.init_level()
         self.show_menu()
         root.mainloop()
@@ -50,7 +72,8 @@ class Client:
         self.board.load(self.game.get("maps")[0], self.game.get("tiles"))
 
     def add_menu_button(self, name, text, handler):
-        self.menu[name] = b = tk.Button(self.m_frame, text=text, fg="gray1", bg="gray30")
+        self.menu[name] = b = tk.Button(self.m_frame, text=text,
+            fg="gray1", bg="gray30", highlightthickness=0)
         b.config(command=handler)
         b.pack(side=tk.TOP, padx=1, fill="x")
 
