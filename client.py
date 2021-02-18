@@ -13,6 +13,8 @@ CHALLENGES = Path("./game/challenges")
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
 DEFAULT_PLAYER_TILE = 2138
+MENU_WIDTH = 156
+MENU_HEIGHT = 360
 
 class Client:
     def __init__(self):
@@ -23,11 +25,12 @@ class Client:
         root.title("DandyBot")
         canvas = tk.Canvas(root, bg="black", highlightthickness=0)
         canvas.pack(side=tk.LEFT)
-        self.m_frame = frame = tk.Frame(root, bg="black", width=96)
-        frame.pack(side=tk.RIGHT, anchor="n")
+        self.m_frame = frame = tk.Frame(root, bg="black", width=MENU_WIDTH, height=MENU_HEIGHT)
+        frame.pack_propagate(0)
+        frame.pack(side=tk.RIGHT, anchor="n", fill="x")
         label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, fg="white", bg="gray15")
-        label.pack(side=tk.TOP, anchor="n")
+        label.pack(side=tk.TOP, fill="x", anchor="n")
         tileset = json.loads(DATA_DIR.joinpath("tileset.json").read_text())
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
         self.board = Board(tileset, canvas, label)
@@ -67,7 +70,6 @@ class Client:
         switch_tile(int(LAST_TILE.read_text()) if LAST_TILE.exists() else DEFAULT_PLAYER_TILE) #FIXME: bad file contents
         btn_left.config(command=lambda: switch_tile(self.tile-1))
         btn_right.config(command=lambda: switch_tile(self.tile+1))
-
         #################### Menu ####################
         menu_frame = tk.Frame(frame, bg="black")
         menu_frame.pack(side=tk.TOP, fill="x")
@@ -110,9 +112,9 @@ class Client:
         pass
 
     def show_error(self, text):
-        label = tk.Label(self.m_frame, font=("TkFixedFont",12),
-                            text="Challenge: None", fg="red", bg="gray10")
-        label.pack(anchor="se")
+        label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
+                            text=text, fg="#ba0000", bg="gray10", justify=tk.RIGHT)
+        label.pack(anchor="se", fill="x")
         self.root.after(1500, lambda: label.pack_forget())
 
 class Menu:
@@ -126,8 +128,8 @@ class Menu:
         self.add_button("mp", "multiplayer", lambda: self.show("mp"))
         self.add_button("exit", "exit", lambda: client.root.destroy())
         self.add_button("back", "back", lambda: self.show("main"))
-        self.add_button("sp_select", "back", lambda: client.choose_challenge(self.items["sp_chal"]))
-        self.add_button("sp_play", "back", lambda: client.play_sp())
+        self.add_button("sp_select", "select chal", lambda: client.choose_challenge(self.items["sp_chal"]))
+        self.add_button("sp_play", "play", lambda: client.play_sp())
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",),
                             text="Challenge: None", fg="#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),

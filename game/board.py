@@ -33,11 +33,11 @@ class Board:
             self.screen.set_tile(p.x, p.y, p.tile)
         lines = []
         if self.challenge:
-            lines.append("Chal: %s\nLevels total:%4d" %
+            lines.append("Chal: %s\nLevels total: %4d" %
                 (self.challenge.get("title"), len(self.challenge["levels"])))
-        lines.append("Level:%4s" % (self.map_title))
+        lines.append("Level: %3s" % (self.map_title))
         for p in sorted(players, key=lambda x: x.gold, reverse=True):
-            lines.append("%s:%4d" % (p.name, p.gold))
+            lines.append("%s: %3d" % (p.name, p.gold))
         self.label["text"] = "\n".join(lines)
 
     def set_challenge(self, chal):
