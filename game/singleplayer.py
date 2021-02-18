@@ -6,15 +6,13 @@ from game import Game, Player
 from importlib import import_module
 
 sys.path.insert(0, './bots')
-CHALLENGES = Path("./game/challenges")
 BOT_TILE = 2128
 SP_DELAY = 100
 
 class Singleplayer:
-    def __init__(self, board, user_bot, user_tile):
+    def __init__(self, challenge, board, user_bot, user_tile):
         # TODO: challenge selection
         self.board = board
-        challenge = json.loads(CHALLENGES.joinpath("original.json").read_text())
         board.set_challenge(challenge)
         self.game = Game(challenge)
         players = []

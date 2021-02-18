@@ -9,6 +9,7 @@ from board import Board
 from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
+CHALLENGES = Path("./game/challenges")
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
 DEFAULT_PLAYER_TILE = 2138
@@ -98,8 +99,13 @@ class Client:
             LAST_BOT.write_text(str(self.bot))
 
     def start_sp(self):
+        chal_file = tkinter.filedialog.askopenfilename(title="Choose challenge",
+            initialdir=CHALLENGES, filetypes=[("json files", "*.json")])
+        if not chal_file: return
+        chal = json.loads(Path(chal_file).read_text())
+        # TODO: check chal integrity idk
         if self.game: self.game.stop()
-        self.game = Singleplayer(self.board, self.bot, self.tile)
+        self.game = Singleplayer(chal, self.board, self.bot, self.tile)
         self.game.start(self.root.after)
 
     def start_mp(self):
