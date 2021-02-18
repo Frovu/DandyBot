@@ -12,7 +12,9 @@ def script(check, x, y):
             for ax in range(x-i, x+i+1):
                 if check("gold", ax, y-i): return ax, y-i
         return -1, -1
-    #if check("level") == 1:
+    print
+    if check("level") == 2 and x < 3 and y > 10:
+        return "up"
     gx, gy = detectGold(x, y)
     print((x,y), detectGold(x, y))
     if gx < 0: return "pass"

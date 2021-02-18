@@ -16,8 +16,8 @@ DEFAULT_PLAYER_TILE = 2138
 
 class Client:
     def __init__(self):
-        self.menu = dict()
         self.game = None
+        self.chal = None
         self.root = root = tk.Tk()
         root.configure(background="black")
         root.title("DandyBot")
@@ -32,18 +32,18 @@ class Client:
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
         self.board = Board(tileset, canvas, label)
 
+        #################### Bot label ####################
         if LAST_BOT.exists() and Path(LAST_BOT.read_text()).exists():
             self.bot = Path(LAST_BOT.read_text())
         else:
             self.bot = None
-
         self.bot_label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, bg="gray15")
         self.bot_label.pack(side=tk.TOP, anchor="n", fill="x", pady=5)
-        self.bot_label["text"] = f"bot: {self.bot.stem if self.bot else 'undefined'}"
+        self.bot_label["text"] = f"Bot: {self.bot.stem if self.bot else 'undefined'}"
         self.bot_label["fg"] = "green" if self.bot else "red"
 
-        ##### Tile selector #####
+        #################### Tile selector ####################
         tile_frame = tk.Frame(frame, bg="black")
         tile_frame.pack(side=tk.TOP)
         btn_left = tk.Button(tile_frame, text="<", fg="gray1", bg="gray30", highlightthickness=0)
@@ -68,26 +68,17 @@ class Client:
         btn_left.config(command=lambda: switch_tile(self.tile-1))
         btn_right.config(command=lambda: switch_tile(self.tile+1))
 
-
+        #################### Menu ####################
+        menu_frame = tk.Frame(frame, bg="black")
+        menu_frame.pack(side=tk.TOP, fill="x")
+        self.menu = Menu(self, menu_frame)
+        self.menu.show("main")
         self.init_level()
-        self.show_menu()
         root.mainloop()
 
     def init_level(self):
         map = json.loads(Path("./game/maps/starter_screen.json").read_text())
         self.board.load(map)
-
-    def add_menu_button(self, name, text, handler):
-        self.menu[name] = b = tk.Button(self.m_frame, text=text,
-            fg="gray1", bg="gray30", highlightthickness=0)
-        b.config(command=handler)
-        b.pack(side=tk.TOP, padx=1, fill="x")
-
-    def show_menu(self):
-        self.add_menu_button("change_bot", "change bot", self.change_bot)
-        self.add_menu_button("sp", "single player", self.start_sp)
-        self.add_menu_button("mp", "multiplayer", self.start_mp)
-        self.add_menu_button("exit", "exit", lambda: self.root.destroy())
 
     def change_bot(self):
         newbot = tkinter.filedialog.askopenfilename(
@@ -98,17 +89,77 @@ class Client:
             self.bot_label["fg"] = "green"
             LAST_BOT.write_text(str(self.bot))
 
-    def start_sp(self):
+    def choose_challenge(self, label):
         chal_file = tkinter.filedialog.askopenfilename(title="Choose challenge",
             initialdir=CHALLENGES, filetypes=[("json files", "*.json")])
         if not chal_file: return
-        chal = json.loads(Path(chal_file).read_text())
         # TODO: check chal integrity idk
+        self.chal = Path(chal_file)
+        label["text"] = f"Chal: {self.chal.stem}"
+        label["fg"] = "gray60"
+
+    def play_sp(self):
+        if not self.chal:
+            return self.show_error("Select challenge!")
+        chal = json.loads(self.chal.read_text())
         if self.game: self.game.stop()
         self.game = Singleplayer(chal, self.board, self.bot, self.tile)
         self.game.start(self.root.after)
 
     def start_mp(self):
         pass
+
+    def show_error(self, text):
+        label = tk.Label(self.m_frame, font=("TkFixedFont",12),
+                            text="Challenge: None", fg="red", bg="gray10")
+        label.pack(anchor="se")
+        self.root.after(1500, lambda: label.pack_forget())
+
+class Menu:
+    def __init__(self, client, frame):
+        self.client = client
+        self.frame = frame
+        self.items = dict()
+        self.packed = []
+        self.add_button("change_bot", "change bot", client.change_bot)
+        self.add_button("sp", "single player", lambda: self.show("sp"))
+        self.add_button("mp", "multiplayer", lambda: self.show("mp"))
+        self.add_button("exit", "exit", lambda: client.root.destroy())
+        self.add_button("back", "back", lambda: self.show("main"))
+        self.add_button("sp_select", "back", lambda: client.choose_challenge(self.items["sp_chal"]))
+        self.add_button("sp_play", "back", lambda: client.play_sp())
+        self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",),
+                            text="Challenge: None", fg="#aa0000", bg="gray10")
+        self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),
+                            text="Not implemented", fg="red", bg="gray10")
+
+    def clean(self):
+        for widget in self.packed:
+            widget.pack_forget()
+
+    def add_button(self, name, text, handler):
+        self.items[name] = tk.Button(self.frame, text=text,
+                                fg="gray1", bg="gray30", highlightthickness=0)
+        self.items[name].config(command=handler)
+
+    def show_one(self, name):
+        self.packed.append(self.items[name])
+        self.items[name].pack(side=tk.TOP, padx=1, fill="x")
+
+    def show(self, page):
+        self.clean()
+        if page == "main":
+            self.show_one("change_bot")
+            self.show_one("sp")
+            self.show_one("mp")
+            self.show_one("exit")
+        elif page == "sp":
+            self.show_one("sp_chal")
+            self.show_one("sp_select")
+            self.show_one("sp_play")
+            self.show_one("back")
+        elif page == "mp":
+            self.show_one("not_implemented")
+            self.show_one("back")
 
 client = Client()
