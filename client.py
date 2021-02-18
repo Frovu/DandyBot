@@ -27,8 +27,6 @@ class Client:
         label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, fg="white", bg="gray20")
         label.pack(side=tk.TOP, anchor="n")
-        filename = sys.argv[1] if len(sys.argv) == 2 else "./game/data/game.json"
-        self.game = json.loads(Path(filename).read_text())
         tileset = json.loads(DATA_DIR.joinpath("tileset.json").read_text())
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
         self.board = Board(tileset, canvas, label)
@@ -75,7 +73,8 @@ class Client:
         root.mainloop()
 
     def init_level(self):
-        self.board.load(self.game.get("maps")[0], self.game.get("tiles"))
+        map = json.loads(Path("./game/maps/starter_screen.json").read_text())
+        self.board.load(map)
 
     def add_menu_button(self, name, text, handler):
         self.menu[name] = b = tk.Button(self.m_frame, text=text,
@@ -99,7 +98,7 @@ class Client:
             LAST_BOT.write_text(str(self.bot))
 
     def start_sp(self):
-        game = Singleplayer(self.board, DATA_DIR)
+        game = Singleplayer(self.board, self.bot, self.tile)
         def update():
             t = time.time()
             if game.play():

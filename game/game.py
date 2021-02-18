@@ -20,27 +20,26 @@ GOLD = "gold"
 WALL = "wall"
 EMPTY = "empty"
 
+DEFAULT_BOT_TILE = 2138
 
 class Game:
-    def __init__(self, game):
-        self.game = game
-        self.load_players()
+    def __init__(self, game, player):
+        self.chal = game
         self.level_index = 0
-        self.load_level()
-
-    def load_players(self):
         self.players = []
-        for i, name in enumerate(self.game["players"]):
+        for i, name in enumerate(self.chal["bots"]):
             script = import_module(name).script
-            tile = self.game["tiles"]["@"][i]
-            self.players.append(Player(name, script, self, tile))
+            tile = self.chal["tiles"][name] if "tiles" in self.chal and name in self.chal["tiles"] else 0
+            self.players.append(Player(name, script, self, tile or DEFAULT_BOT_TILE))
+        self.players.append(Player(player["name"], player["script"], self, player["tile"]))
         shuffle(self.players)
+        self.load_level()
 
     def load_level(self):
         self.gold = 0
         self.steps = 0
-        self.level = self.game["levels"][self.level_index]
-        data = self.game["maps"][self.level["map"]]
+        self.level = self.chal["levels"][self.level_index]
+        data = self.chal["maps"][self.level["map"]]
         self.cols, self.rows = cols, rows = len(data[0]), len(data)
         self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
@@ -91,7 +90,7 @@ class Game:
 
     def next_level(self):
         self.level_index += 1
-        if self.level_index < len(self.game["levels"]):
+        if self.level_index < len(self.chal["levels"]):
             self.load_level()
             return True
         return False
@@ -101,6 +100,9 @@ class Game:
 
     def update_score(self):
         pass
+
+    def get_map(self):
+        return {}
 
     def fetch(self):
         return self.map, self.players
