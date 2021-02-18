@@ -3,11 +3,11 @@ import time
 import json
 from pathlib import Path
 from game import Game, Player
-from importlib import import_module
+from importlib import import_module, reload
 
 sys.path.insert(0, './bots')
 BOT_TILE = 2128
-SP_DELAY = 100
+SP_DELAY = 30
 
 class Singleplayer:
     def __init__(self, challenge, board, user_bot, user_tile):
@@ -23,6 +23,8 @@ class Singleplayer:
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
                 players.append(Player(self.game, bot_name, script, tile))
         # load player bot
+        if user_bot.stem in sys.modules is not None:
+             reload(sys.modules[user_bot.stem])
         script = import_module(user_bot.stem).script # FIXME: handle import error
         players.append(Player(self.game, user_bot.stem, script, user_tile))
 
