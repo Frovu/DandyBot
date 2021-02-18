@@ -13,6 +13,7 @@ class Singleplayer:
         # TODO: challenge selection
         self.board = board
         challenge = json.loads(CHALLENGES.joinpath("original.json").read_text())
+        board.set_challenge(challenge)
         self.game = Game(challenge)
         players = []
         # load challenge bots

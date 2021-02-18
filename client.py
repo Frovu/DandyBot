@@ -23,10 +23,10 @@ class Client:
         root.title("DandyBot")
         canvas = tk.Canvas(root, bg="black", highlightthickness=0)
         canvas.pack(side=tk.LEFT)
-        self.m_frame = frame = tk.Frame(root, bg="black")
+        self.m_frame = frame = tk.Frame(root, bg="black", width=96)
         frame.pack(side=tk.RIGHT, anchor="n")
         label = tk.Label(frame, font=("TkFixedFont",),
-                         justify=tk.RIGHT, fg="white", bg="gray20")
+                         justify=tk.RIGHT, fg="white", bg="gray15")
         label.pack(side=tk.TOP, anchor="n")
         tileset = json.loads(DATA_DIR.joinpath("tileset.json").read_text())
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()

@@ -42,7 +42,7 @@ class Game:
             self.map_tiles = map.get("tiles")
         else: # map from chal file
             data = self.chal["maps"][name]
-            self.map_title = str(name)
+            self.map_title = str(name + 1)
             self.map_tiles = None
 
         self.gold = 0

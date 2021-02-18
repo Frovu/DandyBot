@@ -12,6 +12,7 @@ class Board:
         self.canvas = canvas
         self.label = label
         self.tileset = tileset
+        self.challenge = None
         self.screen = PliTk(canvas, 0, 0, 0, 0, self.tileset, SCALE)
 
     def load(self, map):
@@ -30,7 +31,14 @@ class Board:
                 self.screen.set_tile(x, y, self.tiles[grid[y][x]])
         for p in players:
             self.screen.set_tile(p.x, p.y, p.tile)
-        score_lines = [("Level:%s\n" % (self.map_title))]
+        lines = []
+        if self.challenge:
+            lines.append("Chal: %s\nLevels total:%4d" %
+                (self.challenge.get("title"), len(self.challenge["levels"])))
+        lines.append("Level:%4s" % (self.map_title))
         for p in sorted(players, key=lambda x: x.gold, reverse=True):
-            score_lines.append("%s:%4d" % (p.name, p.gold))
-        self.label["text"] = "\n".join(score_lines)
+            lines.append("%s:%4d" % (p.name, p.gold))
+        self.label["text"] = "\n".join(lines)
+
+    def set_challenge(self, chal):
+        self.challenge = chal
