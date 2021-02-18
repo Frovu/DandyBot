@@ -55,10 +55,14 @@ class Client:
         tile_canvas.pack(side=tk.LEFT)
         btn_right.pack(side=tk.LEFT, padx=3, pady=3)
         tile_plitk = PliTk(tile_canvas, 0, 0, 1, 1, tileset, 1)
+        tile_label = tk.Label(frame, font=("TkFixedFont",7),
+                         justify=tk.RIGHT, fg="gray50", bg="black")
+        tile_label.pack(side=tk.TOP)
 
         def switch_tile(n):
             tile_plitk.set_tile(0, 0, n)
             self.tile = n
+            tile_label["text"] = f"tile: {n}"
             LAST_TILE.write_text(str(self.tile))
             # TODO: restrict choice
         switch_tile(int(LAST_TILE.read_text()) if LAST_TILE.exists() else DEFAULT_PLAYER_TILE) #FIXME: bad file contents
