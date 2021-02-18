@@ -11,7 +11,9 @@ from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
 SP_DELAY = 100
-LAST_BOT = ".lastbot"
+LAST_BOT = Path(".lastbot")
+LAST_TILE = Path(".lasttile")
+DEFAULT_PLAYER_TILE = 2138
 
 class Client:
     def __init__(self):
@@ -31,9 +33,8 @@ class Client:
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
         self.board = Board(tileset, canvas, label)
 
-        lastbot = Path(LAST_BOT)
-        if lastbot.exists() and Path(lastbot.read_text()).exists():
-            self.bot = Path(lastbot.read_text())
+        if LAST_BOT.exists() and Path(LAST_BOT.read_text()).exists():
+            self.bot = Path(LAST_BOT.read_text())
         else:
             self.bot = None
 
@@ -55,11 +56,12 @@ class Client:
         btn_right.pack(side=tk.LEFT, padx=3, pady=3)
         tile_plitk = PliTk(tile_canvas, 0, 0, 1, 1, tileset, 1)
 
-        # TODO: restrict choice
         def switch_tile(n):
             tile_plitk.set_tile(0, 0, n)
             self.tile = n
-        switch_tile(2138)
+            LAST_TILE.write_text(str(self.tile))
+            # TODO: restrict choice
+        switch_tile(int(LAST_TILE.read_text()) if LAST_TILE.exists() else DEFAULT_PLAYER_TILE) #FIXME: bad file contents
         btn_left.config(command=lambda: switch_tile(self.tile-1))
         btn_right.config(command=lambda: switch_tile(self.tile+1))
 
@@ -90,7 +92,7 @@ class Client:
             self.bot = Path(newbot)
             self.bot_label["text"] = f"bot: {self.bot.stem}"
             self.bot_label["fg"] = "green"
-            Path(LAST_BOT).write_text(str(self.bot))
+            LAST_BOT.write_text(str(self.bot))
 
     def start_sp(self):
         game = Singleplayer(self.board, DATA_DIR)

@@ -37,7 +37,6 @@ class PliTk:
                     image=self.images[0], anchor="nw"))
 
     def set_tile(self, x, y, index):
-        print(index)
         self.canvas.itemconfigure(
             self.tiles[self.cols * y + x], image=self.images[index]
         )
