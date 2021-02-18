@@ -16,7 +16,7 @@ class Board:
 
     def load(self, map):
         self.tiles = dict(DEFAULT_TILES)
-        if "tiles" in map: self.tiles.update(map["tiles"])
+        if map.get("tiles"): self.tiles.update(map["tiles"])
         cols, rows = len(map["grid"][0]), len(map["grid"])
         self.canvas.config(width=cols * self.tileset["tile_width"] * SCALE,
                            height=rows * self.tileset["tile_height"] * SCALE)

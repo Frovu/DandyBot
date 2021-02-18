@@ -7,6 +7,8 @@ from random import randrange, shuffle
 
 sys.path.insert(0, './bots')
 
+MAPS_DIR = Path("./game/maps")
+
 UP = "up"
 DOWN = "down"
 LEFT = "left"
@@ -36,10 +38,22 @@ class Game:
         self.load_level()
 
     def load_level(self):
+        self.level = self.chal["levels"][self.level_index]
+        name = self.level["map"]
+        if type(name) is str: # map from separate file
+            # TODO: handle map loading error
+            fname = name if name.endswith(".json") else name + ".json"
+            map = json.loads(MAPS_DIR.joinpath(fname))
+            data = map["grid"]
+            self.map_title = map["title"]
+            self.map_tiles = map.get("tiles")
+        else: # map from chal file
+            data = self.chal["maps"][name]
+            self.map_title = str(name)
+            self.map_tiles = None
+
         self.gold = 0
         self.steps = 0
-        self.level = self.chal["levels"][self.level_index]
-        data = self.chal["maps"][self.level["map"]]
         self.cols, self.rows = cols, rows = len(data[0]), len(data)
         self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
@@ -102,7 +116,11 @@ class Game:
         pass
 
     def get_map(self):
-        return {}
+        return {
+            "grid": self.map,
+            "title": self.map_title,
+            "tiles": self.map_tiles or self.chal.get("tiles")
+        }
 
     def fetch(self):
         return self.map, self.players

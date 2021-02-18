@@ -20,6 +20,7 @@ class Client:
         self.menu = dict()
         self.root = root = tk.Tk()
         root.configure(background="black")
+        root.title("DandyBot")
         canvas = tk.Canvas(root, bg="black", highlightthickness=0)
         canvas.pack(side=tk.LEFT)
         self.m_frame = frame = tk.Frame(root, bg="black")
