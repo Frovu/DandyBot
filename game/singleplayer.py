@@ -1,4 +1,5 @@
 import sys
+import time
 import json
 from pathlib import Path
 from game import Game, Player
@@ -7,6 +8,7 @@ from importlib import import_module
 sys.path.insert(0, './bots')
 CHALLENGES = Path("./game/challenges")
 BOT_TILE = 2128
+SP_DELAY = 100
 
 class Singleplayer:
     def __init__(self, board, user_bot, user_tile):
@@ -29,12 +31,23 @@ class Singleplayer:
         self.game.load_players(players)
         self.board.load(self.game.get_map())
 
+    def start(self, updater):
+        self.updater = updater
+        updater(0, self.play)
+
+    def stop(self):
+        self.updater = None
+
     def play(self):
+        t = time.time()
         for p in self.game.players:
             action = p.script(self.game.check, p.x, p.y)
             p.set_action(action)
         cont = self.game.play()
-        if cont:
+        if cont and self.updater:
             map, players = self.game.fetch()
             self.board.update(map, players)
-        return cont
+            dt = int((time.time() - t) * 1000)
+            self.updater(max(SP_DELAY - dt, 0), self.play)
+        else:
+            self.board.label["text"] += "\n\nGAME OVER!"

@@ -1,6 +1,5 @@
 import sys
 import json
-import time
 from pathlib import Path
 import tkinter as tk
 import tkinter.filedialog
@@ -10,7 +9,6 @@ from board import Board
 from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
-SP_DELAY = 100
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
 DEFAULT_PLAYER_TILE = 2138
@@ -18,6 +16,7 @@ DEFAULT_PLAYER_TILE = 2138
 class Client:
     def __init__(self):
         self.menu = dict()
+        self.game = None
         self.root = root = tk.Tk()
         root.configure(background="black")
         root.title("DandyBot")
@@ -99,15 +98,9 @@ class Client:
             LAST_BOT.write_text(str(self.bot))
 
     def start_sp(self):
-        game = Singleplayer(self.board, self.bot, self.tile)
-        def update():
-            t = time.time()
-            if game.play():
-                dt = int((time.time() - t) * 1000)
-                self.root.after(max(SP_DELAY - dt, 0), update)
-            else:
-                self.board.label["text"] += "\n\nGAME OVER!"
-        self.root.after(0, update)
+        if self.game: self.game.stop()
+        self.game = Singleplayer(self.board, self.bot, self.tile)
+        self.game.start(self.root.after)
 
     def start_mp(self):
         pass
