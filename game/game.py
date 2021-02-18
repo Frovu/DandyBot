@@ -1,11 +1,6 @@
-﻿import time
-import sys
 import json
-from importlib import import_module
 from pathlib import Path
-from random import randrange, shuffle
-
-sys.path.insert(0, './bots')
+from random import shuffle
 
 MAPS_DIR = Path("./game/maps")
 
@@ -22,20 +17,18 @@ GOLD = "gold"
 WALL = "wall"
 EMPTY = "empty"
 
-DEFAULT_BOT_TILE = 2138
-
 class Game:
-    def __init__(self, game, player):
+    def __init__(self, game):
         self.chal = game
         self.level_index = 0
         self.players = []
-        for i, name in enumerate(self.chal["bots"]):
-            script = import_module(name).script
-            tile = self.chal["tiles"][name] if "tiles" in self.chal and name in self.chal["tiles"] else 0
-            self.players.append(Player(name, script, self, tile or DEFAULT_BOT_TILE))
-        self.players.append(Player(player["name"], player["script"], self, player["tile"]))
-        shuffle(self.players)
         self.load_level()
+
+    def load_players(self, players):
+        self.players = players
+        shuffle(self.players)
+        for p in self.players:
+            self.add_player(p, *self.level["start"])
 
     def load_level(self):
         self.level = self.chal["levels"][self.level_index]
@@ -117,9 +110,9 @@ class Game:
 
 class Player:
     def __init__(self, game, name, script, tile):
+        self.game = game
         self.name = name
         self.script = script
-        self.game = game
         self.tile = tile
         self.next_action = PASS
         self.x, self.y = 0, 0
@@ -133,7 +126,7 @@ class Player:
         if cmd == PASS: return
         dx, dy = 0, 0
         if cmd == TAKE:
-            return self.take()
+            self.take()
         elif cmd == UP:
             dy -= 1
         elif cmd == DOWN:
@@ -143,14 +136,16 @@ class Player:
         elif cmd == RIGHT:
             dx += 1
         self.move(dx, dy)
+        self.next_action = PASS
 
     def move(self, dx, dy):
-        x, y = self.x + dx, self.y + dy
-        game = self.game
-        game.remove_player(self)
-        if not game.check(WALL, x, y) and not game.check(PLAYER, x, y):
-            self.x, self.y = x, y
-        game.add_player(self, self.x, self.y)
+        if dx or dy:
+            x, y = self.x + dx, self.y + dy
+            game = self.game
+            game.remove_player(self)
+            if not game.check(WALL, x, y) and not game.check(PLAYER, x, y):
+                self.x, self.y = x, y
+            game.add_player(self, self.x, self.y)
 
     def take(self):
         gold = self.game.check(GOLD, self.x, self.y)
