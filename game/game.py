@@ -94,7 +94,7 @@ class Game:
         self.level_index += 1
         if self.level_index < len(self.chal["levels"]):
             self.load_level()
-            return True
+            return "new map"
         return False
 
     def get_map(self):

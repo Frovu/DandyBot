@@ -45,6 +45,8 @@ class Singleplayer:
             p.set_action(action)
         cont = self.game.play()
         if cont and self.updater:
+            if cont == "new map":
+                self.board.load(self.game.get_map())
             map, players = self.game.fetch()
             self.board.update(map, players)
             dt = int((time.time() - t) * 1000)
