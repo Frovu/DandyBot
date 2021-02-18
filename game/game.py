@@ -57,7 +57,6 @@ class Game:
         self.cols, self.rows = cols, rows = len(data[0]), len(data)
         self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
-        self.update_score()
         for p in self.players:
             self.add_player(p, *self.level["start"])
 
@@ -68,18 +67,14 @@ class Game:
 
     def remove_player(self, player):
         self.has_player[player.x][player.y] = None
-        self.update(player.x, player.y)
 
     def add_player(self, player, x, y):
         player.x, player.y = x, y
         self.has_player[x][y] = player
-        self.update(x, y)
 
     def take_gold(self, x, y):
         self.gold += self.check(GOLD, x, y)
         self.map[y][x] = " "
-        self.update(x, y)
-        self.update_score()
 
     def check(self, cmd, *args):
         if cmd == LEVEL:
@@ -96,11 +91,11 @@ class Game:
 
     def play(self):
         for p in self.players:
-            p.act(p.script(self.check, p.x, p.y))
+            p.act()
         if self.gold >= self.level["gold"]:
             return self.next_level()
         self.steps += 1
-        return self.steps < self.level["steps"]
+        return not self.level.get("steps") or self.steps < self.level["steps"]
 
     def next_level(self):
         self.level_index += 1
@@ -108,12 +103,6 @@ class Game:
             self.load_level()
             return True
         return False
-
-    def update(self, x, y):
-        pass
-
-    def update_score(self):
-        pass
 
     def get_map(self):
         return {
@@ -127,17 +116,25 @@ class Game:
 
 
 class Player:
-    def __init__(self, name, script, board, tile):
+    def __init__(self, game, name, script, tile):
         self.name = name
         self.script = script
-        self.board = board
+        self.game = game
         self.tile = tile
+        self.next_action = PASS
         self.x, self.y = 0, 0
         self.gold = 0
 
-    def act(self, cmd):
+    def set_action(self, action):
+        self.next_action = action
+
+    def act(self):
+        cmd = self.next_action
+        if cmd == PASS: return
         dx, dy = 0, 0
-        if cmd == UP:
+        if cmd == TAKE:
+            return self.take()
+        elif cmd == UP:
             dy -= 1
         elif cmd == DOWN:
             dy += 1
@@ -145,20 +142,18 @@ class Player:
             dx -= 1
         elif cmd == RIGHT:
             dx += 1
-        elif cmd == TAKE:
-            self.take()
         self.move(dx, dy)
 
     def move(self, dx, dy):
         x, y = self.x + dx, self.y + dy
-        board = self.board
-        board.remove_player(self)
-        if not board.check(WALL, x, y) and not board.check(PLAYER, x, y):
+        game = self.game
+        game.remove_player(self)
+        if not game.check(WALL, x, y) and not game.check(PLAYER, x, y):
             self.x, self.y = x, y
-        board.add_player(self, self.x, self.y)
+        game.add_player(self, self.x, self.y)
 
     def take(self):
-        gold = self.board.check(GOLD, self.x, self.y)
+        gold = self.game.check(GOLD, self.x, self.y)
         if gold:
             self.gold += gold
-            self.board.take_gold(self.x, self.y)
+            self.game.take_gold(self.x, self.y)
