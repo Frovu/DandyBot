@@ -117,11 +117,14 @@ class Client:
         chal = json.loads(chal_path.read_text())
         # TODO: check chal integrity idk
         if self.game: self.game.stop()
-        self.game = Singleplayer(chal, self.board,
-            self.settings["bot"],
-            self.settings["tile"],
-            self.settings["tickrate"])
-        self.game.start(self.root.after)
+        try:
+            self.game = Singleplayer(chal, self.board,
+                self.settings["bot"],
+                self.settings["tile"],
+                self.settings["tickrate"])
+            self.game.start(self.root.after)
+        except Exception as e:
+            return self.show_error(str(e))
 
     def stop_sp(self):
         if self.game: self.game.stop()

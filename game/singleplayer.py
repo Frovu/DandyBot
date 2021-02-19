@@ -15,16 +15,21 @@ class Singleplayer:
         board.set_challenge(challenge)
         self.game = Game(challenge)
         players = []
+        def load_bot(bot):
+            try:
+                return import_module(bot).script
+            except:
+                raise Exception(f"Failed to load bot: {bot}")
         # load challenge bots
         if challenge.get("bots"):
             for bot_name in challenge["bots"]:
-                script = import_module(bot_name).script # FIXME: handle import error
+                script = load_bot(bot_name)
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
                 players.append(Player(self.game, bot_name, script, tile))
         # load player bot
         if user_bot in sys.modules is not None:
              reload(sys.modules[user_bot])
-        script = import_module(user_bot).script # FIXME: handle import error
+        script = load_bot(user_bot)
         players.append(Player(self.game, user_bot, script, user_tile))
 
         self.game.load_players(players)
