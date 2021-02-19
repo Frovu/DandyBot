@@ -7,6 +7,7 @@ sys.path.insert(0, './game')
 from plitk import PliTk
 from board import Board
 from singleplayer import Singleplayer
+from multiplayer import Multiplayer
 
 DATA_DIR = Path("./game/data")
 CHALLENGES = Path("./game/challenges")
@@ -28,9 +29,10 @@ class Client:
         sets = (SETTINGS if SETTINGS.exists() else DEFAULT_SETTINGS).read_text()
         self.settings = json.loads(sets)
 
-        #################### Init window ####################
+        self.mp  = None
         self.game = None
-        self.chal = None
+
+        #################### Init window ####################
         self.root = root = tk.Tk()
         root.configure(background="black")
         root.title("DandyBot")
@@ -129,8 +131,8 @@ class Client:
     def stop_sp(self):
         if self.game: self.game.stop()
 
-    def start_mp(self):
-        pass
+    def mp_connect(self):
+        self.mp = Multiplayer(self.board, "127.0.0.1", 8888)
 
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())
@@ -142,6 +144,10 @@ class Client:
                 self.settings[setting] = int(set) if setting in SETTINGS_IN_MENU_INT else set
         SETTINGS.write_text(json.dumps(self.settings))
         self.show_success("Settings saved!")
+
+    def exit(self):
+        if self.mp: self.mp.disconnect()
+        self.root.destroy()
 
     def show_error(self, text):
         label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
@@ -165,7 +171,7 @@ class Menu:
         self.add_button("change_bot", "change bot", client.change_bot)
         self.add_button("sp", "single player", lambda: self.show("sp"))
         self.add_button("mp", "multiplayer", lambda: self.show("mp"))
-        self.add_button("exit", "exit", lambda: client.root.destroy())
+        self.add_button("exit", "exit", client.exit)
         self.add_button("back", "back", lambda: self.show("main"))
         self.add_button("sp_select", "select chal", lambda: client.choose_challenge(self.items["sp_chal"]))
         self.add_button("sp_play", "play", client.play_sp)
@@ -173,6 +179,7 @@ class Menu:
         self.add_button("settings", "settings", lambda: self.show("settings"))
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
+        self.add_button("mp_connect", "connect", client.mp_connect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",), text="Chal: "+chal
@@ -216,6 +223,7 @@ class Menu:
             self.show_one("back")
         elif page == "mp":
             self.show_one("not_implemented")
+            self.show_one("mp_connect")
             self.show_one("back")
         elif page == "settings":
             for setting in SETTINGS_IN_MENU:

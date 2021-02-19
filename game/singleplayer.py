@@ -1,7 +1,5 @@
 import sys
 import time
-import json
-from pathlib import Path
 from game import Game, Player
 from importlib import import_module, reload
 
@@ -27,7 +25,7 @@ class Singleplayer:
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
                 players.append(Player(self.game, bot_name, script, tile))
         # load player bot
-        if user_bot in sys.modules is not None:
+        if user_bot in sys.modules:
              reload(sys.modules[user_bot])
         script = load_bot(user_bot)
         players.append(Player(self.game, user_bot, script, user_tile))
