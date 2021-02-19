@@ -7,11 +7,11 @@ from importlib import import_module, reload
 
 sys.path.insert(0, './bots')
 BOT_TILE = 2128
-SP_DELAY = 30
+SP_DELAY = 20
 
 class Singleplayer:
-    def __init__(self, challenge, board, user_bot, user_tile):
-        # TODO: challenge selection
+    def __init__(self, challenge, board, user_bot, user_tile, tick_rate):
+        self.tick_rate = tick_rate
         self.board = board
         board.set_challenge(challenge)
         self.game = Game(challenge)
@@ -50,6 +50,7 @@ class Singleplayer:
             map, players = self.game.fetch()
             self.board.update(map, players)
             dt = int((time.time() - t) * 1000)
+            print(f"tick, dt/d = {dt}/{SP_DELAY}")
             self.updater(max(SP_DELAY - dt, 0), self.play)
         else:
             self.board.label["text"] += "\n\nGAME OVER!"

@@ -18,6 +18,7 @@ MENU_HEIGHT = 360
 
 class Client:
     def __init__(self):
+        self.settings = {"tickrate": 20}
         self.game = None
         self.chal = None
         self.root = root = tk.Tk()
@@ -114,6 +115,12 @@ class Client:
     def start_mp(self):
         pass
 
+    def default_settings(self):
+        pass # TODO
+
+    def save_settings(self):
+        print(self.menu.settings["tickrate"].get())
+
     def show_error(self, text):
         label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
                             text=text, fg="#ba0000", bg="gray10", justify=tk.RIGHT)
@@ -123,6 +130,7 @@ class Client:
 class Menu:
     def __init__(self, client, frame):
         self.client = client
+        self.settings = dict()
         self.frame = frame
         self.items = dict()
         self.packed = []
@@ -132,12 +140,20 @@ class Menu:
         self.add_button("exit", "exit", lambda: client.root.destroy())
         self.add_button("back", "back", lambda: self.show("main"))
         self.add_button("sp_select", "select chal", lambda: client.choose_challenge(self.items["sp_chal"]))
-        self.add_button("sp_play", "play", lambda: client.play_sp())
-        self.add_button("sp_stop", "stop", lambda: client.stop_sp())
+        self.add_button("sp_play", "play", client.play_sp)
+        self.add_button("sp_stop", "stop", client.stop_sp)
+        self.add_button("settings", "settings", lambda: self.show("settings"))
+        self.add_button("set_default", "default", client.default_settings)
+        self.add_button("set_save", "save", client.save_settings)
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",),
                             text="Challenge: None", fg="#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),
                             text="Not implemented", fg="red", bg="gray10")
+        self.items["set_tick_label"] = tk.Label(frame, font=("TkFixedFont",),
+                            text="tick, ms", fg="white", bg="gray10")
+        self.settings["tickrate"] = tk.StringVar()
+        self.settings["tickrate"].set(client.settings["tickrate"])
+        self.items["set_tick"] = tk.Entry(frame, textvariable=self.settings["tickrate"])
 
     def clean(self):
         for widget in self.packed:
@@ -158,6 +174,7 @@ class Menu:
             self.show_one("change_bot")
             self.show_one("sp")
             self.show_one("mp")
+            self.show_one("settings")
             self.show_one("exit")
         elif page == "sp":
             self.show_one("sp_chal")
@@ -167,6 +184,12 @@ class Menu:
             self.show_one("back")
         elif page == "mp":
             self.show_one("not_implemented")
+            self.show_one("back")
+        elif page == "settings":
+            self.show_one("set_tick_label")
+            self.show_one("set_tick")
+            self.show_one("set_default")
+            self.show_one("set_save")
             self.show_one("back")
 
 client = Client()
