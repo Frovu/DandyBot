@@ -16,11 +16,12 @@ SETTINGS = Path("./settings.json")
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
 SETTINGS_IN_MENU = { # dict of settings_name: label_text
-    "tickrate": "tick, ms"
+    "tickrate": "tick, ms",
+    "max_scale": "max tile scale"
 }
-SETTINGS_IN_MENU_INT = ["tickrate"]
+SETTINGS_IN_MENU_NUM = ["tickrate", "max_scale"]
 MENU_WIDTH = 156
-MENU_HEIGHT = 360
+MENU_HEIGHT = 400
 GREEN = "#40ff40"
 
 class Client:
@@ -46,7 +47,7 @@ class Client:
         label.pack(side=tk.TOP, fill="x", anchor="n")
         tileset = json.loads(DATA_DIR.joinpath("tileset.json").read_text())
         tileset["data"] = DATA_DIR.joinpath(tileset["file"]).read_bytes()
-        self.board = Board(tileset, canvas, label)
+        self.board = Board(tileset, canvas, label, self.settings["max_scale"])
 
         #################### Bot label ####################
         self.bot_label = tk.Label(frame, font=("TkFixedFont",),
@@ -153,8 +154,11 @@ class Client:
         if user_input:
             for setting in SETTINGS_IN_MENU:
                 set = self.menu.settings[setting].get()
-                self.settings[setting] = int(set) if setting in SETTINGS_IN_MENU_INT else set
-        SETTINGS.write_text(json.dumps(self.settings))
+                self.settings[setting] = float(set) if setting in SETTINGS_IN_MENU_NUM else set
+                # settings that require additional action
+                if setting == "max_scale":
+                    self.board.set_max_scale(self.settings[setting])
+        SETTINGS.write_text(json.dumps(self.settings, indent=4))
         self.show_success("Settings saved!")
 
     def exit(self):

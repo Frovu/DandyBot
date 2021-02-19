@@ -1,4 +1,5 @@
 {
+	"max_scale": 1,
 	"tickrate": 20,
 	"tile": 2138,
 	"bot": "user_bot",
