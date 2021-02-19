@@ -108,6 +108,9 @@ class Client:
         self.game = Singleplayer(chal, self.board, self.bot, self.tile)
         self.game.start(self.root.after)
 
+    def stop_sp(self):
+        if self.game: self.game.stop()
+
     def start_mp(self):
         pass
 
@@ -130,6 +133,7 @@ class Menu:
         self.add_button("back", "back", lambda: self.show("main"))
         self.add_button("sp_select", "select chal", lambda: client.choose_challenge(self.items["sp_chal"]))
         self.add_button("sp_play", "play", lambda: client.play_sp())
+        self.add_button("sp_stop", "stop", lambda: client.stop_sp())
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",),
                             text="Challenge: None", fg="#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),
@@ -159,6 +163,7 @@ class Menu:
             self.show_one("sp_chal")
             self.show_one("sp_select")
             self.show_one("sp_play")
+            self.show_one("sp_stop")
             self.show_one("back")
         elif page == "mp":
             self.show_one("not_implemented")
