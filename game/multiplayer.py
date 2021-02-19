@@ -22,11 +22,15 @@ class Multiplayer:
     async def connect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
-        except ConnectionRefusedError as e:
+        except:
             return self.handle_error("Can't connect to server!")
-        self.writer.write("get challenge".encode())
+        self.writer.write("ping".encode())
         data = await self.reader.read(100)
         print(f'Received: {data.decode()!r}')
+        if data.decode() == "pong":
+            self.queue.put(("success", "Connected!"))
+        else:
+            self.handle_error("Failed server handshake")
 
     def handle_error(self, message):
         self.queue.put(("error", message))

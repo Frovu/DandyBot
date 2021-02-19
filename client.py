@@ -142,6 +142,8 @@ class Client:
                     break
                 if type == "error":
                     self.show_error(message)
+                elif type == "success":
+                    self.show_success(message)
                 else:
                     self.show_error("unhandled mp event: "+type)
             self.root.after(50, updater)

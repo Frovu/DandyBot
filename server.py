@@ -31,6 +31,10 @@ class Server:
         print(f"Received {message} from {addr}")
         if message.startswith("get"):
             resp = self.get(message.split()[1])
+        elif message.startswith("ping"):
+            resp = "pong"
+        else:
+            resp = "400"
         print(f"Sending: {resp}")
         writer.write(resp.encode())
         await writer.drain()
