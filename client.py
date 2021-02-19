@@ -17,9 +17,10 @@ LAST_TILE = Path(".lasttile")
 SETTINGS_IN_MENU = { # dict of settings_name: label_text
     "tickrate": "tick, ms"
 }
-DEFAULT_PLAYER_TILE = 2138
+SETTINGS_IN_MENU_INT = ["tickrate"]
 MENU_WIDTH = 156
 MENU_HEIGHT = 360
+GREEN = "#40ff40"
 
 class Client:
     def __init__(self):
@@ -46,15 +47,11 @@ class Client:
         self.board = Board(tileset, canvas, label)
 
         #################### Bot label ####################
-        if LAST_BOT.exists() and Path(LAST_BOT.read_text()).exists():
-            self.bot = Path(LAST_BOT.read_text())
-        else:
-            self.bot = None
         self.bot_label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, bg="gray15")
         self.bot_label.pack(side=tk.TOP, anchor="n", fill="x", pady=5)
-        self.bot_label["text"] = f"Bot: {self.bot.stem if self.bot else 'undefined'}"
-        self.bot_label["fg"] = "green" if self.bot else "red"
+        self.bot_label["text"] = f"Bot: {self.settings.get('bot') or 'undefined'}"
+        self.bot_label["fg"] = GREEN if self.settings.get('bot') else "red"
 
         #################### Tile selector ####################
         tile_frame = tk.Frame(frame, bg="black")
@@ -67,19 +64,19 @@ class Client:
         tile_canvas.pack(side=tk.LEFT)
         btn_right.pack(side=tk.LEFT, padx=3, pady=3)
         tile_plitk = PliTk(tile_canvas, 0, 0, 1, 1, tileset, 1)
-        tile_label = tk.Label(frame, font=("TkFixedFont",7),
+        tile_label = tk.Label(frame, font=("TkFixedFont",7), text="tile: "+str(self.settings["tile"]),
                          justify=tk.RIGHT, fg="gray50", bg="black")
         tile_label.pack(side=tk.TOP)
 
         def switch_tile(n):
-            tile_plitk.set_tile(0, 0, n)
-            self.tile = n
-            tile_label["text"] = f"tile: {n}"
-            LAST_TILE.write_text(str(self.tile))
             # TODO: restrict choice
-        switch_tile(int(LAST_TILE.read_text()) if LAST_TILE.exists() else DEFAULT_PLAYER_TILE) #FIXME: bad file contents
-        btn_left.config(command=lambda: switch_tile(self.tile-1))
-        btn_right.config(command=lambda: switch_tile(self.tile+1))
+            tile_plitk.set_tile(0, 0, n)
+            tile_label["text"] = f"tile: {n}"
+            self.settings["tile"] = n
+            self.save_settings(0)
+        tile_plitk.set_tile(0, 0, self.settings["tile"])
+        btn_left.config(command=lambda: switch_tile(self.settings["tile"] - 1))
+        btn_right.config(command=lambda: switch_tile(self.settings["tile"] + 1))
         ########################   Menu   ########################
         menu_frame = tk.Frame(frame, bg="black")
         menu_frame.pack(side=tk.TOP, fill="x")
@@ -96,26 +93,34 @@ class Client:
         newbot = tkinter.filedialog.askopenfilename(
             initialdir=Path("bots"), filetypes=[("python files", "*.py")])
         if newbot and Path(newbot).exists():
-            self.bot = Path(newbot)
-            self.bot_label["text"] = f"bot: {self.bot.stem}"
-            self.bot_label["fg"] = "green"
-            LAST_BOT.write_text(str(self.bot))
+            self.settings["bot"] = Path(newbot).stem
+            self.bot_label["text"] = "bot: " + self.settings["bot"]
+            self.bot_label["fg"] = GREEN
+            self.save_settings(0)
 
     def choose_challenge(self, label):
         chal_file = tkinter.filedialog.askopenfilename(title="Choose challenge",
             initialdir=CHALLENGES, filetypes=[("json files", "*.json")])
         if not chal_file: return
-        # TODO: check chal integrity idk
-        self.chal = Path(chal_file)
-        label["text"] = f"Chal: {self.chal.stem}"
+        chal = Path(chal_file)
+        self.settings["challenge"] = chal.file
+        self.save_settings(0)
+        label["text"] = f"Chal: {chal.stem}"
         label["fg"] = "gray60"
 
     def play_sp(self):
-        if not self.chal:
+        if not self.settings["challenge"]:
             return self.show_error("Select challenge!")
-        chal = json.loads(self.chal.read_text())
+        chal_path = CHALLENGES.joinpath(self.settings["challenge"])
+        if not chal_path.exists():
+            return self.show_error(f"Not found chal: {chal_path.file}")
+        chal = json.loads(chal_path.read_text())
+        # TODO: check chal integrity idk
         if self.game: self.game.stop()
-        self.game = Singleplayer(chal, self.board, self.bot, self.tile)
+        self.game = Singleplayer(chal, self.board,
+            self.settings["bot"],
+            self.settings["tile"],
+            self.settings["tickrate"])
         self.game.start(self.root.after)
 
     def stop_sp(self):
@@ -125,18 +130,27 @@ class Client:
         pass
 
     def default_settings(self):
-        pass # TODO
+        self.settings = json.loads(DEFAULT_SETTINGS.read_text())
 
-    def save_settings(self):
-        for setting in SETTINGS_IN_MENU:
-            self.settings[setting] = self.menu.settings[setting].get()
+    def save_settings(self, user_input):
+        if user_input:
+            for setting in SETTINGS_IN_MENU:
+                set = self.menu.settings[setting].get()
+                self.settings[setting] = int(set) if setting in SETTINGS_IN_MENU_INT else set
         SETTINGS.write_text(json.dumps(self.settings))
+        self.show_success("Settings saved!")
 
     def show_error(self, text):
         label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
                             text=text, fg="#ba0000", bg="gray10", justify=tk.RIGHT)
         label.pack(anchor="se", fill="x")
         self.root.after(1500, lambda: label.pack_forget())
+
+    def show_success(self, text):
+        label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
+                            text=text, fg="#44ff44", bg="gray10", justify=tk.RIGHT)
+        label.pack(anchor="se", fill="x")
+        self.root.after(1000, lambda: label.pack_forget())
 
 class Menu:
     def __init__(self, client, frame):
@@ -155,9 +169,11 @@ class Menu:
         self.add_button("sp_stop", "stop", client.stop_sp)
         self.add_button("settings", "settings", lambda: self.show("settings"))
         self.add_button("set_default", "default", client.default_settings)
-        self.add_button("set_save", "save", client.save_settings)
-        self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",),
-                            text="Challenge: None", fg="#aa0000", bg="gray10")
+        self.add_button("set_save", "save", lambda: client.save_settings(1))
+        chal = client.settings.get("challenge")
+        if chal: chal = chal.split(".")[0]
+        self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",), text="Chal: "+chal
+                ,fg="gray60" if chal else "#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),
                             text="Not implemented", fg="red", bg="gray10")
 

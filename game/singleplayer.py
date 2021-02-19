@@ -7,7 +7,6 @@ from importlib import import_module, reload
 
 sys.path.insert(0, './bots')
 BOT_TILE = 2128
-SP_DELAY = 20
 
 class Singleplayer:
     def __init__(self, challenge, board, user_bot, user_tile, tick_rate):
@@ -23,10 +22,10 @@ class Singleplayer:
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
                 players.append(Player(self.game, bot_name, script, tile))
         # load player bot
-        if user_bot.stem in sys.modules is not None:
-             reload(sys.modules[user_bot.stem])
-        script = import_module(user_bot.stem).script # FIXME: handle import error
-        players.append(Player(self.game, user_bot.stem, script, user_tile))
+        if user_bot in sys.modules is not None:
+             reload(sys.modules[user_bot])
+        script = import_module(user_bot).script # FIXME: handle import error
+        players.append(Player(self.game, user_bot, script, user_tile))
 
         self.game.load_players(players)
         self.board.load(self.game.get_map())
@@ -50,7 +49,7 @@ class Singleplayer:
             map, players = self.game.fetch()
             self.board.update(map, players)
             dt = int((time.time() - t) * 1000)
-            print(f"tick, dt/d = {dt}/{SP_DELAY}")
-            self.updater(max(SP_DELAY - dt, 0), self.play)
+            print(f"tick, dt/d = {dt}/{self.tick_rate}")
+            self.updater(max(self.tick_rate - dt, 0), self.play)
         else:
             self.board.label["text"] += "\n\nGAME OVER!"
