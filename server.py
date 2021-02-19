@@ -1,27 +1,47 @@
+import sys
+import json
+sys.path.insert(0, './game')
+from game import Game
 import asyncio
 
-async def handle_echo(reader, writer):
-    data = await reader.read(100)
-    message = data.decode()
-    addr = writer.get_extra_info('peername')
+class ServerGame(Game):
+    def __init__(self):
+        pass
 
-    print(f"Received {message!r} from {addr!r}")
+class Server:
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
 
-    print(f"Send: {message!r}")
-    writer.write(data)
-    await writer.drain()
+    async def serve(self):
+        server = await asyncio.start_server(
+            self.handler, self.ip, self.port)
 
-    print("Close the connection")
-    writer.close()
+        addr = server.sockets[0].getsockname()
+        print(f'Serving on {addr}')
 
-async def main():
-    server = await asyncio.start_server(
-        handle_echo, '127.0.0.1', 8888)
+        async with server:
+            await server.serve_forever()
 
-    addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr}')
+    async def handler(self, reader, writer):
+        data = await reader.read(100)
+        message = data.decode()
+        addr = writer.get_extra_info('peername')
 
-    async with server:
-        await server.serve_forever()
+        print(f"Received {message} from {addr}")
+        if message.startswith("get"):
+            resp = self.get(message.split()[1])
+        print(f"Sending: {resp}")
+        writer.write(resp.encode())
+        await writer.drain()
 
-asyncio.run(main())
+        writer.close()
+
+    def get(self, what):
+        if what == "challenge":
+            return "the trial"
+        else:
+            return None
+
+server = Server('127.0.0.1', 8888)
+asyncio.run(server.serve())

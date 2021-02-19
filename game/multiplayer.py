@@ -25,7 +25,7 @@ class Multiplayer:
         except ConnectionRefusedError as e:
             return self.handle_error("Can't connect to server!")
         self.writer.write("get challenge".encode())
-        data = await reader.read(100)
+        data = await self.reader.read(100)
         print(f'Received: {data.decode()!r}')
 
     def handle_error(self, message):
