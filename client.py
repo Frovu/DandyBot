@@ -133,6 +133,18 @@ class Client:
 
     def mp_connect(self):
         self.mp = Multiplayer(self.board, "127.0.0.1", 8888)
+        def updater():
+            while True:
+                try:
+                    type, message = self.mp.queue.get_nowait()
+                except:
+                    break
+                if type == "error":
+                    self.show_error(message)
+                else:
+                    self.show_error("unhandled mp event: "+type)
+            self.root.after(50, updater)
+        self.root.after(0, updater)
 
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())

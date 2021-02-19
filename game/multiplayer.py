@@ -22,11 +22,14 @@ class Multiplayer:
     async def connect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
-        except:
-            raise Exception("Can't connect to server!")
+        except ConnectionRefusedError as e:
+            return self.handle_error("Can't connect to server!")
         self.writer.write("get challenge".encode())
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
+
+    def handle_error(self, message):
+        self.queue.put(("error", message))
 
     def start_game(self, player_bot, player_tile):
         try:
