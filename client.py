@@ -10,15 +10,24 @@ from singleplayer import Singleplayer
 
 DATA_DIR = Path("./game/data")
 CHALLENGES = Path("./game/challenges")
+DEFAULT_SETTINGS = Path("./default_settings.json")
+SETTINGS = Path("./settings.json")
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
+SETTINGS_IN_MENU = { # dict of settings_name: label_text
+    "tickrate": "tick, ms"
+}
 DEFAULT_PLAYER_TILE = 2138
 MENU_WIDTH = 156
 MENU_HEIGHT = 360
 
 class Client:
     def __init__(self):
-        self.settings = {"tickrate": 20}
+        #################### Init settings ####################
+        sets = (SETTINGS if SETTINGS.exists() else DEFAULT_SETTINGS).read_text()
+        self.settings = json.loads(sets)
+
+        #################### Init window ####################
         self.game = None
         self.chal = None
         self.root = root = tk.Tk()
@@ -71,7 +80,7 @@ class Client:
         switch_tile(int(LAST_TILE.read_text()) if LAST_TILE.exists() else DEFAULT_PLAYER_TILE) #FIXME: bad file contents
         btn_left.config(command=lambda: switch_tile(self.tile-1))
         btn_right.config(command=lambda: switch_tile(self.tile+1))
-        #################### Menu ####################
+        ########################   Menu   ########################
         menu_frame = tk.Frame(frame, bg="black")
         menu_frame.pack(side=tk.TOP, fill="x")
         self.menu = Menu(self, menu_frame)
@@ -119,7 +128,9 @@ class Client:
         pass # TODO
 
     def save_settings(self):
-        print(self.menu.settings["tickrate"].get())
+        for setting in SETTINGS_IN_MENU:
+            self.settings[setting] = self.menu.settings[setting].get()
+        SETTINGS.write_text(json.dumps(self.settings))
 
     def show_error(self, text):
         label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
@@ -149,11 +160,13 @@ class Menu:
                             text="Challenge: None", fg="#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),
                             text="Not implemented", fg="red", bg="gray10")
-        self.items["set_tick_label"] = tk.Label(frame, font=("TkFixedFont",),
-                            text="tick, ms", fg="white", bg="gray10")
-        self.settings["tickrate"] = tk.StringVar()
-        self.settings["tickrate"].set(client.settings["tickrate"])
-        self.items["set_tick"] = tk.Entry(frame, textvariable=self.settings["tickrate"])
+
+        for setting in SETTINGS_IN_MENU:
+            self.items[f"s_{setting}_label"] = tk.Label(frame, font=("TkFixedFont",),
+                        text=SETTINGS_IN_MENU[setting], fg="white", bg="gray10")
+            self.settings[setting] = tk.StringVar()
+            self.settings[setting].set(client.settings[setting])
+            self.items[f"s_{setting}"] = tk.Entry(frame, textvariable=self.settings[setting])
 
     def clean(self):
         for widget in self.packed:
@@ -186,8 +199,9 @@ class Menu:
             self.show_one("not_implemented")
             self.show_one("back")
         elif page == "settings":
-            self.show_one("set_tick_label")
-            self.show_one("set_tick")
+            for setting in SETTINGS_IN_MENU:
+                self.show_one(f"s_{setting}_label")
+                self.show_one(f"s_{setting}")
             self.show_one("set_default")
             self.show_one("set_save")
             self.show_one("back")

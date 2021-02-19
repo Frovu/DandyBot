@@ -1,0 +1,6 @@
+{
+	"tickrate": 20,
+	"tile": 2138,
+	"bot": "user_bot",
+	"challenge": "original.json"
+}
