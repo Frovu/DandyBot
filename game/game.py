@@ -18,20 +18,28 @@ WALL = "wall"
 EMPTY = "empty"
 
 class Game:
-    def __init__(self, game):
-        self.chal = game
+    def __init__(self, challenge):
+        self.challenge = challenge
         self.level_index = 0
         self.players = []
         self.load_level()
+        # load challenge bots
+        if challenge.get("bots"):
+            for bot_name in challenge["bots"]:
+                try:
+                    return import_module(bot).script
+                except:
+                    raise Exception(f"Failed to load bot: {bot}")
+                tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
+                self.load_player(LocalPlayer(self.game, bot_name, tile, script))
 
-    def load_players(self, players):
-        self.players = players
+    def load_player(self, player):
+        self.players.append(player)
+        self.add_player(player, *self.level["start"])
         shuffle(self.players)
-        for p in self.players:
-            self.add_player(p, *self.level["start"])
 
     def load_level(self):
-        self.level = self.chal["levels"][self.level_index]
+        self.level = self.challenge["levels"][self.level_index]
         name = self.level["map"]
         if type(name) is str: # map from separate file
             # TODO: handle map loading error
@@ -41,7 +49,7 @@ class Game:
             self.map_title = map["title"]
             self.map_tiles = map.get("tiles")
         else: # map from chal file
-            data = self.chal["maps"][name]
+            data = self.challenge["maps"][name]
             self.map_title = str(name + 1)
             self.map_tiles = None
 
@@ -92,7 +100,7 @@ class Game:
 
     def next_level(self):
         self.level_index += 1
-        if self.level_index < len(self.chal["levels"]):
+        if self.level_index < len(self.challenge["levels"]):
             self.load_level()
             return "new map"
         return False
@@ -101,7 +109,7 @@ class Game:
         return {
             "grid": self.map,
             "title": self.map_title,
-            "tiles": self.map_tiles or self.chal.get("tiles")
+            "tiles": self.map_tiles or self.challenge.get("tiles")
         }
 
     def fetch(self):

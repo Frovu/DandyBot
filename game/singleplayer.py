@@ -6,8 +6,6 @@ from importlib import import_module, reload
 sys.path.insert(0, './bots')
 BOT_TILE = 2128
 
-
-
 class Singleplayer:
     def __init__(self, challenge, board, user_bot, user_tile, tick_rate):
         self.tick_rate = tick_rate
