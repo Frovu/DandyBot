@@ -15,11 +15,17 @@ DEFAULT_SETTINGS = Path("./default_settings.json")
 SETTINGS = Path("./settings.json")
 LAST_BOT = Path(".lastbot")
 LAST_TILE = Path(".lasttile")
+
 SETTINGS_IN_MENU = { # dict of settings_name: label_text
     "tickrate": "tick, ms",
-    "max_scale": "max tile scale"
+    "max_scale": "max tile scale",
+    "server_ip": "server address",
+    "server_port": "server port",
+    "username": "user name"
 }
-SETTINGS_IN_MENU_NUM = ["tickrate", "max_scale"]
+MP_SETTINGS = ["server_ip", "server_port", "username"]
+SETTINGS_INT = ["tickrate", "server_port"]
+SETTINGS_FLOAT = ["max_scale"]
 MENU_WIDTH = 156
 MENU_HEIGHT = 400
 GREEN = "#40ff40"
@@ -133,7 +139,8 @@ class Client:
         if self.game: self.game.stop()
 
     def mp_connect(self):
-        self.mp = Multiplayer(self.board, "127.0.0.1", 8888)
+        self.save_settings(1, 0)
+        self.mp = Multiplayer(self.board, self.settings["server_ip"], self.settings["server_port"])
         def updater():
             while True:
                 try:
@@ -152,16 +159,18 @@ class Client:
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())
 
-    def save_settings(self, user_input):
+    def save_settings(self, user_input, show_message=True):
         if user_input:
             for setting in SETTINGS_IN_MENU:
                 set = self.menu.settings[setting].get()
-                self.settings[setting] = float(set) if setting in SETTINGS_IN_MENU_NUM else set
+                if setting in SETTINGS_INT: set = int(set)
+                if setting in SETTINGS_FLOAT: set = float(set)
+                self.settings[setting] = set
                 # settings that require additional action
                 if setting == "max_scale":
                     self.board.set_max_scale(self.settings[setting])
         SETTINGS.write_text(json.dumps(self.settings, indent=4))
-        self.show_success("Settings saved!")
+        if show_message: self.show_success("Settings saved!")
 
     def exit(self):
         if self.mp: self.mp.disconnect()
@@ -240,11 +249,15 @@ class Menu:
             self.show_one("sp_stop")
             self.show_one("back")
         elif page == "mp":
-            self.show_one("not_implemented")
+            # self.show_one("not_implemented")
+            for setting in MP_SETTINGS:
+                self.show_one(f"s_{setting}_label")
+                self.show_one(f"s_{setting}")
             self.show_one("mp_connect")
             self.show_one("back")
         elif page == "settings":
             for setting in SETTINGS_IN_MENU:
+                if setting in MP_SETTINGS: continue
                 self.show_one(f"s_{setting}_label")
                 self.show_one(f"s_{setting}")
             self.show_one("set_default")

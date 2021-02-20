@@ -3,5 +3,8 @@
 	"tickrate": 20,
 	"tile": 2138,
 	"bot": "user_bot",
-	"challenge": "original.json"
+	"challenge": "original.json",
+	"server_ip": "",
+	"server_port": 8989,
+	"username": "anon"
 }
