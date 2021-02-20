@@ -142,6 +142,7 @@ class Client:
         self.save_settings(1, 0)
         self.mp = Multiplayer(self.board, self.settings["server_ip"], self.settings["server_port"])
         def updater():
+            if not self.mp: return
             while True:
                 try:
                     type, message = self.mp.queue.get_nowait()
@@ -151,10 +152,19 @@ class Client:
                     self.show_error(message)
                 elif type == "success":
                     self.show_success(message)
+                elif type == "switch_tab":
+                    self.menu.show(message)
                 else:
                     self.show_error("unhandled mp event: "+type)
             self.root.after(50, updater)
         self.root.after(0, updater)
+
+    def mp_disconnect(self):
+        if self.mp:
+            self.mp.disconnect()
+            self.show_success("Disconnected")
+            self.menu.show("mp")
+
 
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())
@@ -207,6 +217,7 @@ class Menu:
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
         self.add_button("mp_connect", "connect", client.mp_connect)
+        self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",), text="Chal: "+chal
@@ -255,6 +266,8 @@ class Menu:
                 self.show_one(f"s_{setting}")
             self.show_one("mp_connect")
             self.show_one("back")
+        elif page == "mp_server":
+            self.show_one("mp_disconnect")
         elif page == "settings":
             for setting in SETTINGS_IN_MENU:
                 if setting in MP_SETTINGS: continue

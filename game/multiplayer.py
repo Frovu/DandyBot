@@ -29,6 +29,7 @@ class Multiplayer:
         print(f'Received: {data.decode()!r}')
         if data.decode() == "pong":
             self.queue.put(("success", "Connected!"))
+            self.queue.put(("switch_tab", "mp_server"))
         else:
             self.handle_error("Failed server handshake")
 
