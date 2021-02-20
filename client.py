@@ -162,6 +162,7 @@ class Client:
     def mp_disconnect(self):
         if self.mp:
             self.mp.disconnect()
+            self.mp = None
             self.show_success("Disconnected")
             self.menu.show("mp")
 
@@ -186,17 +187,17 @@ class Client:
         if self.mp: self.mp.disconnect()
         self.root.destroy()
 
-    def show_error(self, text):
+    def show_message(self, text, color):
         label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
-                            text=text, fg="#ba0000", bg="gray10", justify=tk.RIGHT)
+                            text=text, fg=color, bg="gray10", justify=tk.RIGHT)
         label.pack(anchor="se", fill="x")
         self.root.after(1500, lambda: label.pack_forget())
 
+    def show_error(self, text):
+        self.show_message(text, "#ba0000")
+
     def show_success(self, text):
-        label = tk.Message(self.m_frame, font=("TkFixedFont",), width=MENU_WIDTH,
-                            text=text, fg="#44ff44", bg="gray10", justify=tk.RIGHT)
-        label.pack(anchor="se", fill="x")
-        self.root.after(1000, lambda: label.pack_forget())
+        self.show_message(text, "#44ff44")
 
 class Menu:
     def __init__(self, client, frame):

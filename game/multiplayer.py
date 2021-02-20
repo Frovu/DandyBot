@@ -45,6 +45,7 @@ class Multiplayer:
             raise Exception(f"Failed to load bot: {bot}")
 
     def disconnect(self):
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        self.thread.join()
-        self.loop.close()
+        if not self.loop.is_closed():
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            self.thread.join()
+            self.loop.close()
