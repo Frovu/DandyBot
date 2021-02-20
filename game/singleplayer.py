@@ -1,10 +1,12 @@
 import sys
 import time
-from game import Game, Player
+from game import Game, LocalPlayer
 from importlib import import_module, reload
 
 sys.path.insert(0, './bots')
 BOT_TILE = 2128
+
+
 
 class Singleplayer:
     def __init__(self, challenge, board, user_bot, user_tile, tick_rate):
@@ -23,12 +25,12 @@ class Singleplayer:
             for bot_name in challenge["bots"]:
                 script = load_bot(bot_name)
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
-                players.append(Player(self.game, bot_name, script, tile))
+                players.append(LocalPlayer(self.game, bot_name, tile, script))
         # load player bot
         if user_bot in sys.modules:
              reload(sys.modules[user_bot])
         script = load_bot(user_bot)
-        players.append(Player(self.game, user_bot, script, user_tile))
+        players.append(LocalPlayer(self.game, user_bot, user_tile, script))
 
         self.game.load_players(players)
         self.board.load(self.game.get_map())
@@ -42,9 +44,6 @@ class Singleplayer:
 
     def play(self):
         t = time.time()
-        for p in self.game.players:
-            action = p.script(self.game.check, p.x, p.y)
-            p.set_action(action)
         cont = self.game.play()
         if cont and self.updater:
             if cont == "new map":

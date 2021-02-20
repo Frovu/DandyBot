@@ -84,7 +84,7 @@ class Game:
 
     def play(self):
         for p in self.players:
-            p.act()
+            p.do_action()
         if self.gold >= self.level["gold"]:
             return self.next_level()
         self.steps += 1
@@ -109,10 +109,9 @@ class Game:
 
 
 class Player:
-    def __init__(self, game, name, script, tile):
+    def __init__(self, game, name, tile):
         self.game = game
         self.name = name
-        self.script = script
         self.tile = tile
         self.next_action = PASS
         self.x, self.y = 0, 0
@@ -121,8 +120,7 @@ class Player:
     def set_action(self, action):
         self.next_action = action
 
-    def act(self):
-        cmd = self.next_action
+    def act(self, cmd):
         if cmd == PASS: return
         dx, dy = 0, 0
         if cmd == TAKE:
@@ -136,7 +134,6 @@ class Player:
         elif cmd == RIGHT:
             dx += 1
         self.move(dx, dy)
-        self.next_action = PASS
 
     def move(self, dx, dy):
         if dx or dy:
@@ -152,3 +149,11 @@ class Player:
         if gold:
             self.gold += gold
             self.game.take_gold(self.x, self.y)
+
+class LocalPlayer(Player):
+    def __init__(self, game, name, tile, script):
+        super().__init__(game, name, tile)
+        self.script = script
+
+    def do_action(self):
+        self.act(self.script(self.game.check, self.x, self.y))
