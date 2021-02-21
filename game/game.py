@@ -1,6 +1,10 @@
+import sys
 import json
 from pathlib import Path
 from random import shuffle
+from importlib import import_module, reload
+
+sys.path.insert(0, './bots')
 
 MAPS_DIR = Path("./game/maps")
 
@@ -25,13 +29,13 @@ class Game:
         self.load_level()
         # load challenge bots
         if challenge.get("bots"):
-            for bot_name in challenge["bots"]:
+            for bot in challenge["bots"]:
                 try:
                     return import_module(bot).script
                 except:
                     raise Exception(f"Failed to load bot: {bot}")
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
-                self.load_player(LocalPlayer(self.game, bot_name, tile, script))
+                self.load_player(LocalPlayer(self.game, bot, tile, script))
 
     def load_player(self, player):
         self.players.append(player)

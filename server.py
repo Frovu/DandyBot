@@ -21,6 +21,7 @@ class Connection:
             message += " " + json.dumps(object)
         self.writer.write(message.encode())
         await self.writer.drain()
+        print("send: "+message)
         resp = await  self.reader.read(CHUNK)
         resp = resp.decode()
         if not object is None and resp == "ok":
@@ -40,7 +41,7 @@ class Connection:
 
 class RemotePlayer(Player, Connection):
     def __init__(self, game, reader, writer):
-        Connection.__init__(reader, writer)
+        Connection.__init__(self, reader, writer)
         self.username = None
         self.game = game
 
@@ -82,8 +83,8 @@ class Server:
         try:
             await game.connect_player(reader, writer)
             self.games.append(game)
-        except:
-            print("failed to connect player to solo game")
+        except Exception as e:
+            print("failed to connect player to solo game: "+str(e))
 
     async def resp(self, writer, msg):
         writer.write(msg.encode())

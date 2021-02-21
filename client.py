@@ -160,7 +160,8 @@ class Client:
         self.root.after(0, updater)
 
     def mp_play(self):
-        self.menu.show("mp")
+        if self.mp:
+            self.mp.play(self.settings["bot"], self.settings["tile"])
 
     def mp_disconnect(self):
         if self.mp:
@@ -220,7 +221,7 @@ class Menu:
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
         self.add_button("mp_connect", "connect", client.mp_connect)
-        self.add_button("mp_play", "connect", client.mp_play)
+        self.add_button("mp_play", "play", client.mp_play)
         self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]
