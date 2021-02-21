@@ -1,6 +1,7 @@
 import sys
 import json
 import asyncio
+from contextlib import suppress
 from queue import Queue
 from threading import Thread
 from game import Game, Player
@@ -15,10 +16,21 @@ class Multiplayer:
         self.server = server
         self.port = port
         self.username = username
-        self.loop = asyncio.new_event_loop()
+        self.loop = loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.loop.create_task(self.connect())
-        self.thread = Thread(target=self.loop.run_forever)
+        loop.create_task(self.connect())
+        def run_loop():
+            try:
+                loop.run_forever()
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                tasks = asyncio.all_tasks(loop)
+                for task in tasks:
+                    task.cancel()
+                    with suppress(asyncio.CancelledError):
+                        loop.run_until_complete(task)
+            finally:
+                loop.close()
+        self.thread = Thread(target=run_loop)
         self.thread.start()
 
     async def connect(self):
@@ -42,7 +54,7 @@ class Multiplayer:
         print("sent: "+message)
 
     async def listener(self):
-        while True:
+        while not self.loop.is_closed():
             data = await self.reader.read(100)
             message = data.decode()
             if not message:
@@ -73,12 +85,12 @@ class Multiplayer:
             self.script = import_module(self.bot).script
         except:
             raise Exception(f"Failed to load bot: {bot}")
-        try:
-            self.writer.write("start".encode())
-            await self.writer.drain()
-            await self.listener()
-        except:
-            raise Exception(f"Failed to start server game")
+        # try:
+        self.writer.write("start".encode())
+        await self.writer.drain()
+        await self.listener()
+        # except Exception as e:
+        #     raise Exception(f"Failed to start server game:"+str(e))
 
 
     def play(self, player_bot, player_tile):
@@ -86,8 +98,11 @@ class Multiplayer:
         self.tile = player_tile
         asyncio.run_coroutine_threadsafe(self.start_game(), self.loop)
 
+    # async def exit_loop(self):
+
+
     def disconnect(self):
         if not self.loop.is_closed():
+            print("disconnecting mp")
             self.loop.call_soon_threadsafe(self.loop.stop)
             self.thread.join()
-            self.loop.close()
