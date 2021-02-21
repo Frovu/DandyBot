@@ -6,7 +6,7 @@ from game import Game, Player
 import asyncio
 BOT_TILE = 2128
 PLAYER_TILE = 2138
-CHUNK = 128
+CHUNK = 1024
 TICKRATE = 100
 CHALLENGES = Path('./game/challenges')
 
@@ -29,7 +29,7 @@ class Connection:
         try:
             return json.loads(resp)
         except:
-            await self.bad_request()
+            await self.send_status("400")
             raise Exception("Failed to communicate: "+cmd)
 
     async def send_status(self, message):
@@ -57,6 +57,11 @@ class RemotePlayer(Player, Connection):
         Player.__init__(self, self.game, str(bot_name), int(bot_tile))
         await self.send_status("200")
 
+        await self.communicate("map", self.game.get_map())
+
+    async def start(self):
+        pass
+
 
 class ServerGame(Game):
     def __init__(self, challenge, tick_rate):
@@ -83,6 +88,7 @@ class Server:
         game = ServerGame(chal, TICKRATE)
         try:
             await game.connect_player(reader, writer)
+            await game.start()
             self.games.append(game)
         except Exception as e:
             print("failed to connect player to solo game: "+str(e))
@@ -95,6 +101,9 @@ class Server:
         while True:
             data = await reader.read(CHUNK)
             message = data.decode()
+            if not message:
+                await asyncio.sleep(0.01)
+                continue
             if message.startswith("get"):
                 await self.resp(writer, self.get(message.split()[1]))
             elif message.startswith("ping"):

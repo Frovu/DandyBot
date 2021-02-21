@@ -1,5 +1,6 @@
 import sys
 import json
+import signal
 import asyncio
 from contextlib import suppress
 from queue import Queue
@@ -19,6 +20,8 @@ class Multiplayer:
         self.loop = loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         loop.create_task(self.connect())
+        loop.add_signal_handler(signal.SIGTERM, self.disconnect, loop)
+        loop.add_signal_handler(signal.SIGINT,  self.disconnect, loop)
         def run_loop():
             try:
                 loop.run_forever()
@@ -55,18 +58,32 @@ class Multiplayer:
 
     async def listener(self):
         while not self.loop.is_closed():
-            data = await self.reader.read(100)
+            data = await self.reader.read()
             message = data.decode()
             if not message:
                 await asyncio.sleep(.01)
                 continue
+            print("got: "+message)
             if message == "player":
+                # server requests player info
                 print(self.username)
                 await self.resp(json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
+            elif message.startswith("map"):
+                # server sets current map
+                try:
+                    data = message.split()[1]
+                    self.board.load(json.loads(data))
+                    self.resp("ok")
+                except Exception as e:
+                    print(e)
+                    self.handle_error("Failed to load map")
+            elif message.startswith("state"):
+                # server sets current game state
+                pass
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":

@@ -111,7 +111,7 @@ class Game:
 
     def get_map(self):
         return {
-            "grid": self.map,
+            "grid": ["".join(row) for row in self.map],
             "title": self.map_title,
             "tiles": self.map_tiles or self.challenge.get("tiles")
         }
