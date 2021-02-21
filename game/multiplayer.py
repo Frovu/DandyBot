@@ -25,6 +25,7 @@ class Multiplayer:
         except:
             return self.handle_error("Can't connect to server!")
         self.writer.write("ping".encode())
+        await self.writer.drain()
         data = await self.reader.read(100)
         print(f'Received: {data.decode()!r}')
         if data.decode() == "pong":
@@ -33,16 +34,33 @@ class Multiplayer:
         else:
             self.handle_error("Failed server handshake")
 
+    async def listener(self):
+        data = await self.reader.read(100)
+        message = data.decode()
+
     def handle_error(self, message):
         self.queue.put(("error", message))
 
-    def start_game(self, player_bot, player_tile):
+    async def start_game(self):
+        # TODO: handle exceptions more nicely
         try:
-            if player_bot in sys.modules:
-                 reload(sys.modules[player_bot])
-            self.script = import_module(player_bot).script
+            if self.bot in sys.modules:
+                 reload(sys.modules[self.bot])
+            self.script = import_module(self.bot).script
         except:
             raise Exception(f"Failed to load bot: {bot}")
+        try:
+            self.writer.write("start".encode())
+            await self.writer.drain()
+            await self.listener()
+        except:
+            raise Exception(f"Failed to start server game")
+
+
+    def play(self, player_bot, player_tile):
+        self.bot = player_bot
+        self.tile = player_tile
+        asyncio.run_coroutine_threadsafe(self.start_game(), self.loop)
 
     def disconnect(self):
         if not self.loop.is_closed():

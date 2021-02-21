@@ -159,13 +159,15 @@ class Client:
             self.root.after(50, updater)
         self.root.after(0, updater)
 
+    def mp_play(self):
+        self.menu.show("mp")
+
     def mp_disconnect(self):
         if self.mp:
             self.mp.disconnect()
             self.mp = None
             self.show_success("Disconnected")
             self.menu.show("mp")
-
 
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())
@@ -218,6 +220,7 @@ class Menu:
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
         self.add_button("mp_connect", "connect", client.mp_connect)
+        self.add_button("mp_play", "connect", client.mp_play)
         self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]
@@ -268,6 +271,7 @@ class Menu:
             self.show_one("mp_connect")
             self.show_one("back")
         elif page == "mp_server":
+            self.show_one("mp_play")
             self.show_one("mp_disconnect")
         elif page == "settings":
             for setting in SETTINGS_IN_MENU:
