@@ -85,27 +85,27 @@ class Server:
         except:
             print("failed to connect player to solo game")
 
+    async def resp(self, writer, msg):
+        writer.write(msg.encode())
+        await writer.drain()
 
-    async def handler(self, reader, writer):
+    async def listener(self, reader, writer):
         data = await reader.read(CHUNK)
         message = data.decode()
-        addr = writer.get_extra_info('peername')
-
-        print(f"Received {message} from {addr}")
         if message.startswith("get"):
-            resp = self.get(message.split()[1])
+            await self.resp(writer, self.get(message.split()[1]))
         elif message.startswith("ping"):
-            resp = "pong"
+            await self.resp(writer, "pong")
         elif message.startswith("start"):
             await self.start_game("original.json", reader, writer)
-            # TODO chose mode
-            # start single player server challenge
 
-        else:
-            resp = "400"
-        print(f"Sending: {resp}")
-        writer.write(resp.encode())
-        await writer.drain()
+        await self.listener(reader, writer)
+
+
+    async def handler(self, reader, writer):
+        addr = writer.get_extra_info('peername')
+        print(f"{addr} connected")
+        await self.listener(reader, writer)
 
     def get(self, what):
         if what == "challenge":
