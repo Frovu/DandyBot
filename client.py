@@ -139,7 +139,7 @@ class Client:
         if self.game: self.game.stop()
 
     def mp_connect(self):
-        self.save_settings(1, 0)
+        self.save_settings(1, MP_SETTINGS)
         self.mp = Multiplayer(self.board, self.settings["server_ip"], self.settings["server_port"])
         def updater():
             if not self.mp: return
@@ -170,9 +170,9 @@ class Client:
     def default_settings(self):
         self.settings = json.loads(DEFAULT_SETTINGS.read_text())
 
-    def save_settings(self, user_input, show_message=True):
+    def save_settings(self, user_input, only=None):
         if user_input:
-            for setting in SETTINGS_IN_MENU:
+            for setting in (only or SETTINGS_IN_MENU):
                 set = self.menu.settings[setting].get()
                 if setting in SETTINGS_INT: set = int(set)
                 if setting in SETTINGS_FLOAT: set = float(set)
@@ -181,7 +181,7 @@ class Client:
                 if setting == "max_scale":
                     self.board.set_max_scale(self.settings[setting])
         SETTINGS.write_text(json.dumps(self.settings, indent=4))
-        if show_message: self.show_success("Settings saved!")
+        if not only: self.show_success("Settings saved!")
 
     def exit(self):
         if self.mp: self.mp.disconnect()
