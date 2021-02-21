@@ -48,15 +48,17 @@ class Multiplayer:
             if not message:
                 await asyncio.sleep(.01)
                 continue
-            if message.startswith("player"):
+            if message == "player":
                 print(self.username)
                 await self.resp(json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
-            elif None:
-                pass
+            elif message == "200":
+                self.queue.put(("success", "server: ok"))
+            elif message == "400":
+                self.queue.put(("success", "server: bad request"))
             else:
                 pass
 

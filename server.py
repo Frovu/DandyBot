@@ -24,7 +24,6 @@ class Connection:
         print("send: "+message)
         resp = await  self.reader.read(CHUNK)
         resp = resp.decode()
-        print(resp)
         if not object is None and resp == "ok":
             return True
         try:
@@ -33,8 +32,8 @@ class Connection:
             await self.bad_request()
             raise Exception("Failed to communicate: "+cmd)
 
-    async def bad_request(self):
-        self.writer.write("400".encode())
+    async def send_status(self, message):
+        self.writer.write(message.encode())
         await self.writer.drain()
 
     def close(self):
@@ -51,11 +50,12 @@ class RemotePlayer(Player, Connection):
         username = data.get("name")
         bot_name = data.get("bot")
         bot_tile = data.get("tile")
-        if not self.username or not bot_name or not bot_tile:
-            await self.bad_request()
+        if not username or not bot_name or not bot_tile:
+            await self.send_status("400")
             raise Exception("Bad player data")
         self.username = str(username)
-        Player.__init__(self.game, str(bot_name), int(bot_tile))
+        Player.__init__(self, self.game, str(bot_name), int(bot_tile))
+        await self.send_status("200")
 
 
 class ServerGame(Game):
