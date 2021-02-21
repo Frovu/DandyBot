@@ -140,7 +140,10 @@ class Client:
 
     def mp_connect(self):
         self.save_settings(1, MP_SETTINGS)
-        self.mp = Multiplayer(self.board, self.settings["server_ip"], self.settings["server_port"])
+        self.mp = Multiplayer(self.board,
+            self.settings["server_ip"],
+            self.settings["server_port"],
+            self.settings["username"])
         def updater():
             if not self.mp: return
             while True:

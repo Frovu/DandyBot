@@ -24,6 +24,7 @@ class Connection:
         print("send: "+message)
         resp = await  self.reader.read(CHUNK)
         resp = resp.decode()
+        print(resp)
         if not object is None and resp == "ok":
             return True
         try:
@@ -91,17 +92,15 @@ class Server:
         await writer.drain()
 
     async def listener(self, reader, writer):
-        data = await reader.read(CHUNK)
-        message = data.decode()
-        if message.startswith("get"):
-            await self.resp(writer, self.get(message.split()[1]))
-        elif message.startswith("ping"):
-            await self.resp(writer, "pong")
-        elif message.startswith("start"):
-            await self.start_game("original.json", reader, writer)
-
-        await self.listener(reader, writer)
-
+        while True:
+            data = await reader.read(CHUNK)
+            message = data.decode()
+            if message.startswith("get"):
+                await self.resp(writer, self.get(message.split()[1]))
+            elif message.startswith("ping"):
+                await self.resp(writer, "pong")
+            elif message.startswith("start"):
+                await self.start_game("original.json", reader, writer)
 
     async def handler(self, reader, writer):
         addr = writer.get_extra_info('peername')

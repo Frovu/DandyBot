@@ -1,4 +1,5 @@
 import sys
+import json
 import asyncio
 from queue import Queue
 from threading import Thread
@@ -8,11 +9,12 @@ from importlib import import_module, reload
 sys.path.insert(0, './bots')
 
 class Multiplayer:
-    def __init__(self, board, server, port):
+    def __init__(self, board, server, port, username):
         self.queue = Queue()
         self.board = board
         self.server = server
         self.port = port
+        self.username = username
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.create_task(self.connect())
@@ -34,9 +36,29 @@ class Multiplayer:
         else:
             self.handle_error("Failed server handshake")
 
+    async def resp(self, message):
+        self.writer.write(message.encode())
+        await self.writer.drain()
+        print("sent: "+message)
+
     async def listener(self):
-        data = await self.reader.read(100)
-        message = data.decode()
+        while True:
+            data = await self.reader.read(100)
+            message = data.decode()
+            if not message:
+                await asyncio.sleep(.01)
+                continue
+            if message.startswith("player"):
+                print(self.username)
+                await self.resp(json.dumps({
+                    "name": self.username,
+                    "bot": self.bot,
+                    "tile": self.tile
+                }))
+            elif None:
+                pass
+            else:
+                pass
 
     def handle_error(self, message):
         self.queue.put(("error", message))
