@@ -94,6 +94,16 @@ class Game:
             return item != "#" and self.has_player[x][y]
         return cmd == EMPTY
 
+    # absolutely cursed method ikr
+    def check_against_state(state):
+        a_game = Game()
+        self.has_player = [[None for y in range(rows)] for x in range(cols)]
+        self.map = state["grid"]
+        for p in state["players"]:
+            self.has_player[p.x][p.y] = True
+        self.level_index = state["level"]
+        return a_game.check
+
     def play(self):
         for p in self.players:
             p.do_action()
@@ -117,7 +127,10 @@ class Game:
         }
 
     def fetch(self):
-        return self.map, self.players
+        players = list(self.players)
+        for p in players: del p.game
+        grid = ["".join(row) for row in self.map]
+        return grid, players
 
 
 class Player:
@@ -125,12 +138,8 @@ class Player:
         self.game = game
         self.name = name
         self.tile = tile
-        self.next_action = PASS
         self.x, self.y = 0, 0
         self.gold = 0
-
-    def set_action(self, action):
-        self.next_action = action
 
     def act(self, cmd):
         if cmd == PASS: return

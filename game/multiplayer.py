@@ -5,7 +5,7 @@ import asyncio
 from contextlib import suppress
 from queue import Queue
 from threading import Thread
-from game import Game, Player
+from game import Game
 from importlib import import_module, reload
 
 sys.path.insert(0, './bots')
@@ -79,8 +79,21 @@ class Multiplayer:
                     print(e)
                     self.handle_error("Failed to load map")
             elif message.startswith("state"):
-                # server sets current game state
-                pass
+                try:
+                    data = json.loads(message[6:])
+                    self.state = data
+                    await self.resp("ok")
+                except Exception as e:
+                    print(e)
+                    self.handle_error("Failed to update state")
+            elif message.startswith("action"):
+                try:
+                    check = Game.check_against_state(self.state)
+                    action = self.script(check, self.state["x"], self.state["y"])
+                    await self.resp(json.dumps({"action": action}))
+                except Exception as e:
+                    print(e)
+                    self.handle_error("Failed to act")
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
