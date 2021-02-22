@@ -20,8 +20,6 @@ class Multiplayer:
         self.loop = loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         loop.create_task(self.connect())
-        loop.add_signal_handler(signal.SIGTERM, self.disconnect, loop)
-        loop.add_signal_handler(signal.SIGINT,  self.disconnect, loop)
         def run_loop():
             try:
                 loop.run_forever()
@@ -43,9 +41,9 @@ class Multiplayer:
             return self.handle_error("Can't connect to server!")
         self.writer.write("ping".encode())
         await self.writer.drain()
-        data = await self.reader.read(100)
+        data = await self.reader.readline()
         print(f'Received: {data.decode()!r}')
-        if data.decode() == "pong":
+        if data.decode() == "pong\n":
             self.queue.put(("success", "Connected!"))
             self.queue.put(("switch_tab", "mp_server"))
         else:
@@ -58,8 +56,8 @@ class Multiplayer:
 
     async def listener(self):
         while not self.loop.is_closed():
-            data = await self.reader.read()
-            message = data.decode()
+            data = await self.reader.readline()
+            message = data.decode()[:-1]
             if not message:
                 await asyncio.sleep(.01)
                 continue
@@ -75,9 +73,8 @@ class Multiplayer:
             elif message.startswith("map"):
                 # server sets current map
                 try:
-                    data = message.split()[1]
-                    self.board.load(json.loads(data))
-                    self.resp("ok")
+                    self.board.load(json.loads(message[4:]))
+                    await self.resp("ok")
                 except Exception as e:
                     print(e)
                     self.handle_error("Failed to load map")
@@ -87,9 +84,10 @@ class Multiplayer:
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
-                self.queue.put(("success", "server: bad request"))
+                self.queue.put(("error", "server: bad request"))
             else:
                 pass
+        print("mp listener stoped")
 
     def handle_error(self, message):
         self.queue.put(("error", message))

@@ -15,13 +15,13 @@ class Connection:
         self.reader = reader
         self.writer = writer
 
-    async def communicate(self, cmd, object=None):
-        message = cmd
+    async def communicate(self, command, object=None):
+        message = command + ("" if object is None else (" " + json.dumps(object))) + "\n"
         if not object is None:
             message += " " + json.dumps(object)
         self.writer.write(message.encode())
         await self.writer.drain()
-        print("send: "+message)
+        print("sent: "+message)
         resp = await  self.reader.read(CHUNK)
         resp = resp.decode()
         if not object is None and resp == "ok":
@@ -30,10 +30,10 @@ class Connection:
             return json.loads(resp)
         except:
             await self.send_status("400")
-            raise Exception("Failed to communicate: "+cmd)
+            raise Exception("Failed to communicate: "+command)
 
     async def send_status(self, message):
-        self.writer.write(message.encode())
+        self.writer.write(message.encode() + b'\n')
         await self.writer.drain()
 
     def close(self):
@@ -94,7 +94,7 @@ class Server:
             print("failed to connect player to solo game: "+str(e))
 
     async def resp(self, writer, msg):
-        writer.write(msg.encode())
+        writer.write(msg.encode() + b'\n')
         await writer.drain()
 
     async def listener(self, reader, writer):
