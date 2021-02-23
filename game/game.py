@@ -22,6 +22,8 @@ GOLD = "gold"
 WALL = "wall"
 EMPTY = "empty"
 
+BOT_TILE = 2128
+
 class Game:
     def __init__(self, challenge, load=True):
         self.challenge = challenge
@@ -29,14 +31,15 @@ class Game:
         self.players = []
         if load: self.load_level()
         # load challenge bots
-        if challenge.get("bots"):
-            for bot in challenge["bots"]:
-                try:
-                    return import_module(bot).script
-                except:
-                    raise Exception(f"Failed to load bot: {bot}")
+        for bot in (challenge.get("bots") or []):
+            print("load bot: "+bot)
+            try:
+                script = import_module(bot).script
+            except:
+                raise Exception(f"Failed to load bot: {bot}")
+            else:
                 tile = challenge["tiles"][name] if "tiles" in challenge and name in challenge["tiles"] else BOT_TILE
-                self.load_player(LocalPlayer(self.game, bot, tile, script))
+                self.load_player(LocalPlayer(self, bot, tile, script))
 
     def load_player(self, player):
         self.players.append(player)

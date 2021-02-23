@@ -1,5 +1,6 @@
 import sys
 import json
+import traceback
 from pathlib import Path
 import tkinter as tk
 import tkinter.filedialog
@@ -133,6 +134,7 @@ class Client:
                 self.settings["tickrate"])
             self.game.start(self.root.after)
         except Exception as e:
+            traceback.print_exc()
             return self.show_error(str(e))
 
     def stop_sp(self):
