@@ -96,6 +96,9 @@ class Multiplayer:
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to act: "+str(e))
+            elif message == "game_over":
+                self.board.label["text"] += "\n\nGAME OVER!"
+                await self.resp("ok")
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
