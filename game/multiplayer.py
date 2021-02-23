@@ -87,13 +87,12 @@ class Multiplayer:
                     print(e)
                     self.handle_error("Failed to update state")
             elif message.startswith("action"):
-                try:
-                    check = Game.check_against_state(self.state)
-                    action = self.script(check, self.state["x"], self.state["y"])
-                    await self.resp(json.dumps({"action": action}))
-                except Exception as e:
-                    print(e)
-                    self.handle_error("Failed to act")
+                # try:
+                check = Game.check_against_state(self.state)
+                action = self.script(check, self.state["x"], self.state["y"])
+                await self.resp(json.dumps({"action": action}))
+                # except Exception as e:
+                #     self.handle_error("Failed to act:"+str(e))
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":

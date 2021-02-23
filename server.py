@@ -19,8 +19,6 @@ class Connection:
 
     async def communicate(self, command, object=None):
         message = command + ("" if object is None else (" " + json.dumps(object))) + "\n"
-        if not object is None:
-            message += " " + json.dumps(object)
         self.writer.write(message.encode())
         await self.writer.drain()
         print("sent: "+message)
@@ -45,10 +43,9 @@ class RemotePlayer(Player, Connection):
     def __init__(self, game, reader, writer):
         Connection.__init__(self, reader, writer)
         self.username = None
-        self.game = game
+        self.server_game = game
 
     async def connect(self):
-        print("\n\ncall connect\n\n")
         data = await self.communicate("player")
         username = data.get("name")
         bot_name = data.get("bot")
@@ -57,11 +54,11 @@ class RemotePlayer(Player, Connection):
             await self.send_status("400")
             raise Exception("Bad player data")
         self.username = str(username)
-        Player.__init__(self, self.game, str(bot_name), int(bot_tile))
+        Player.__init__(self, self.server_game, str(bot_name), int(bot_tile))
         await self.send_status("200")
         await self.communicate("map", self.game.get_map())
 
-    async def remote_act(self):
+    async def do_action(self):
         map, players = self.game.fetch()
         state = {
             "x": self.x, "y": self.y,
@@ -72,9 +69,6 @@ class RemotePlayer(Player, Connection):
         res = await self.communicate("action")
         self.act(res["action"])
 
-    def do_action(self):
-        asyncio.run(self.remote_act())
-
 
 class ServerGame(Game):
     def __init__(self, challenge, tick_rate):
@@ -83,32 +77,32 @@ class ServerGame(Game):
         self.running = False
         self.loop = asyncio.new_event_loop()
         self.remote_players = []
-        asyncio.set_event_loop(self.loop)
+        #asyncio.set_event_loop(self.loop)
 
-    def connect_player(self, reader, writer):
+    async def connect_player(self, reader, writer):
         player = RemotePlayer(self, reader, writer)
-        self.loop.run_until_complete(player.connect())
+        await player.connect()
         self.remote_players.append(player)
         self.load_player(player)
 
     def stop(self):
         self.running = False
 
-    def start(self):
+    async def start(self):
         self.running = True
         while self.running:
             t = time.time()
-            status = self.play()
+            status = await self.play()
             if status:
                 if status == "new map":
                     for p in self.remote_players:
-                        self.loop.run_until_complete(p.communicate("map", self.get_map()))
+                        await p.communicate("map", self.get_map())
                 dt = int((time.time() - t) * 1000)
                 print(f"tick, dt/d = {dt}/{self.tick_rate}")
                 #await asyncio.sleep(int(max(self.tick_rate - dt, 0))/1000)
             else:
                 for p in self.remote_players:
-                    self.loop.run_until_complete(p.communicate("game_over"))
+                    await p.communicate("game_over")
                 self.stop()
 
 
@@ -122,13 +116,13 @@ class Server:
         chal_path = CHALLENGES.joinpath(title)
         return json.loads(chal_path.read_text())
 
-    def start_game(self, chal_name, reader, writer):
+    async def start_game(self, chal_name, reader, writer):
         chal = self.load_challenge(chal_name)
         game = ServerGame(chal, TICKRATE)
         #try:
-        game.connect_player(reader, writer)
+        await game.connect_player(reader, writer)
         self.games.append(game)
-        game.start()
+        await game.start()
         #except Exception as e:
         #    print("failed to connect player to solo game")
 
@@ -148,8 +142,10 @@ class Server:
             elif message.startswith("ping"):
                 await self.resp(writer, "pong")
             elif message.startswith("start"):
-                t = Thread(target=self.start_game, args=("original.json", reader, writer,))
-                t.start()
+                #t = Thread(target=self.start_game, args=("original.json", reader, writer,))
+                #t.start()
+                await self.start_game("original.json", reader, writer)
+                break
 
     async def handler(self, reader, writer):
         addr = writer.get_extra_info('peername')

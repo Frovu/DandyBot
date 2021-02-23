@@ -1,5 +1,6 @@
 import sys
 import json
+import asyncio
 from pathlib import Path
 from random import shuffle
 from importlib import import_module, reload
@@ -96,7 +97,7 @@ class Game:
 
     # absolutely cursed method ikr
     def check_against_state(state):
-        a_game = Game()
+        a_game = Game({})
         self.has_player = [[None for y in range(rows)] for x in range(cols)]
         self.map = state["grid"]
         for p in state["players"]:
@@ -104,9 +105,9 @@ class Game:
         self.level_index = state["level"]
         return a_game.check
 
-    def play(self):
+    async def play(self):
         for p in self.players:
-            p.do_action()
+            await p.do_action()
         if self.gold >= self.level["gold"]:
             return self.next_level()
         self.steps += 1
@@ -127,8 +128,12 @@ class Game:
         }
 
     def fetch(self):
-        players = list(self.players)
-        for p in players: del p.game
+        players = [{
+            "name": p.name,
+            "tile": p.tile,
+            "x": p.x, "y": p.y,
+            "gold": p.gold
+        } for p in self.players]
         grid = ["".join(row) for row in self.map]
         return grid, players
 
@@ -176,5 +181,5 @@ class LocalPlayer(Player):
         super().__init__(game, name, tile)
         self.script = script
 
-    def do_action(self):
+    async def do_action(self):
         self.act(self.script(self.game.check, self.x, self.y))

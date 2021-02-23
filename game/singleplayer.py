@@ -1,5 +1,6 @@
 import sys
 import time
+import asyncio
 from game import Game, LocalPlayer
 from importlib import import_module, reload
 
@@ -34,6 +35,7 @@ class Singleplayer:
         self.board.load(self.game.get_map())
 
     def start(self, updater):
+        self.loop = asyncio.get_event_loop()
         self.updater = updater
         updater(0, self.play)
 
@@ -42,7 +44,7 @@ class Singleplayer:
 
     def play(self):
         t = time.time()
-        cont = self.game.play()
+        cont = self.loop.run_until_complete(self.game.play())
         if cont and self.updater:
             if cont == "new map":
                 self.board.load(self.game.get_map())
