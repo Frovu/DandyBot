@@ -83,9 +83,10 @@ class Multiplayer:
                 try:
                     data = json.loads(message[6:])
                     self.state = data
+                    self.board.update(data["grid"], data["players"])
                     await self.resp("ok")
                 except Exception as e:
-                    print(e)
+                    traceback.print_exc()
                     self.handle_error("Failed to update state")
             elif message.startswith("action"):
                 try:

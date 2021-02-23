@@ -9,7 +9,7 @@ import asyncio
 BOT_TILE = 2128
 PLAYER_TILE = 2138
 CHUNK = 1024
-TICKRATE = 100
+TICKRATE = 50
 CHALLENGES = Path('./game/challenges')
 
 class Connection:
@@ -21,7 +21,7 @@ class Connection:
         message = command + ("" if object is None else (" " + json.dumps(object))) + "\n"
         self.writer.write(message.encode())
         await self.writer.drain()
-        print("sent: "+message)
+        #print("sent: "+message)
         resp = await self.reader.read(CHUNK)
         resp = resp.decode()
         if not object is None and resp == "ok":
@@ -99,7 +99,7 @@ class ServerGame(Game):
                         await p.communicate("map", self.get_map())
                 dt = int((time.time() - t) * 1000)
                 print(f"tick, dt/d = {dt}/{self.tick_rate}")
-                #await asyncio.sleep(int(max(self.tick_rate - dt, 0))/1000)
+                await asyncio.sleep(int(max(self.tick_rate - dt, 0))/1000)
             else:
                 for p in self.remote_players:
                     await p.communicate("game_over")

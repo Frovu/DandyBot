@@ -43,14 +43,14 @@ class Board:
             for x in range(len(grid[0])):
                 self.screen.set_tile(x, y, self.tiles[grid[y][x]])
         for p in players:
-            self.screen.set_tile(p.x, p.y, p.tile)
+            self.screen.set_tile(p["x"], p["y"], p["tile"])
         lines = []
         if self.challenge:
             lines.append("Chal: %s\nLevels total: %4d" %
                 (self.challenge.get("title"), len(self.challenge["levels"])))
         lines.append("Level: %3s" % (self.map_title))
-        for p in sorted(players, key=lambda x: x.gold, reverse=True):
-            lines.append("%s: %3d" % (p.name, p.gold))
+        for p in sorted(players, key=lambda x: x["gold"], reverse=True):
+            lines.append("%s: %3d" % (p["name"], p["gold"]))
         self.label["text"] = "\n".join(lines)
 
     def set_challenge(self, chal):
