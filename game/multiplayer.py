@@ -2,6 +2,7 @@ import sys
 import json
 import signal
 import asyncio
+import traceback
 from contextlib import suppress
 from queue import Queue
 from threading import Thread
@@ -87,12 +88,13 @@ class Multiplayer:
                     print(e)
                     self.handle_error("Failed to update state")
             elif message.startswith("action"):
-                # try:
-                check = Game.check_against_state(self.state)
-                action = self.script(check, self.state["x"], self.state["y"])
-                await self.resp(json.dumps({"action": action}))
-                # except Exception as e:
-                #     self.handle_error("Failed to act:"+str(e))
+                try:
+                    check = Game.check_against_state(self.state)
+                    action = self.script(check, self.state["x"], self.state["y"])
+                    await self.resp(json.dumps({"action": action}))
+                except Exception as e:
+                    traceback.print_exc()
+                    self.handle_error("Failed to act: "+str(e))
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":

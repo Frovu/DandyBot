@@ -23,11 +23,11 @@ WALL = "wall"
 EMPTY = "empty"
 
 class Game:
-    def __init__(self, challenge):
+    def __init__(self, challenge, load=True):
         self.challenge = challenge
         self.level_index = 0
         self.players = []
-        self.load_level()
+        if load: self.load_level()
         # load challenge bots
         if challenge.get("bots"):
             for bot in challenge["bots"]:
@@ -97,12 +97,13 @@ class Game:
 
     # absolutely cursed method ikr
     def check_against_state(state):
-        a_game = Game({})
-        self.has_player = [[None for y in range(rows)] for x in range(cols)]
-        self.map = state["grid"]
+        a_game = Game({}, 0)
+        a_game.map = state["grid"]
+        a_game.cols, a_game.rows = len(a_game.map[0]), len(a_game.map)
+        a_game.has_player = [[None for y in range(a_game.rows)] for x in range(a_game.cols)]
         for p in state["players"]:
-            self.has_player[p.x][p.y] = True
-        self.level_index = state["level"]
+            a_game.has_player[p["x"]][p["y"]] = True
+        a_game.level_index = state["level"]
         return a_game.check
 
     async def play(self):
