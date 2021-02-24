@@ -111,7 +111,11 @@ class Game:
 
     async def play(self):
         for p in self.players:
-            await p.do_action()
+            try:
+                await asyncio.wait_for(p.do_action(), timeout=1.0)
+            except asyncio.TimeoutError:
+                print(p.name+" timed out turn")
+            print(p.name+" acted")
         if self.gold >= self.level["gold"]:
             return self.next_level()
         self.steps += 1

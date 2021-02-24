@@ -22,7 +22,9 @@ class Connection:
         self.writer.write(message.encode())
         await self.writer.drain()
         #print("sent: "+message)
+        print("start c read")
         resp = await self.reader.read(CHUNK)
+        print("stop c read")
         resp = resp.decode()
         if not object is None and resp == "ok" or not await_resp:
             return True
@@ -59,6 +61,7 @@ class RemotePlayer(Player, Connection):
         await self.communicate("map", self.game.get_map())
 
     async def do_action(self):
+        print(self.name+" acts")
         map, players = self.game.fetch()
         state = {
             "x": self.x, "y": self.y,
@@ -78,6 +81,7 @@ class ServerGame(Game):
         self.running = False
         self.loop = asyncio.new_event_loop()
         self.remote_players = []
+        self.host = None
         #asyncio.set_event_loop(self.loop)
 
     async def connect_player(self, reader, writer):
@@ -85,6 +89,9 @@ class ServerGame(Game):
         await player.connect()
         self.remote_players.append(player)
         self.load_player(player)
+        if len(self.remote_players) == 1:
+            self.host = player
+        return player
 
     def stop(self):
         self.running = False
@@ -127,7 +134,9 @@ class Server:
 
     async def listener(self, reader, writer):
         while True:
+            print("start s read")
             data = await reader.read(CHUNK)
+            print("stop s read")
             message = data.decode()
             if not message:
                 await asyncio.sleep(0.01)
@@ -149,7 +158,9 @@ class Server:
                     if game is None:
                         await self.resp(writer, "404")
                         break
-                await game.connect_player(reader, writer)
+                player = await game.connect_player(reader, writer)
+                if game.host != player:
+                    break
             elif message.startswith("start"):
                 split = message.split(" ")
                 if len(split) < 2:
