@@ -43,10 +43,10 @@ class RemotePlayer(Player, Connection):
     def __init__(self, game, reader, writer):
         Connection.__init__(self, reader, writer)
         self.username = None
-        self.server_game = game
+        self.server_game = game # idk python inheritance too hard for me
 
     async def connect(self):
-        data = await self.communicate("player")
+        data = await self.communicate("player "+self.server_game.name)
         username = data.get("name")
         bot_name = data.get("bot")
         bot_tile = data.get("tile")
@@ -71,8 +71,9 @@ class RemotePlayer(Player, Connection):
 
 
 class ServerGame(Game):
-    def __init__(self, challenge, tick_rate):
+    def __init__(self, name, challenge, tick_rate):
         super().__init__(challenge)
+        self.name = name
         self.tick_rate = tick_rate
         self.running = False
         self.loop = asyncio.new_event_loop()
@@ -110,21 +111,15 @@ class Server:
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
-        self.games = []
+        self.games = {}
 
-    def load_challenge(self, title):
-        chal_path = CHALLENGES.joinpath(title)
-        return json.loads(chal_path.read_text())
-
-    async def start_game(self, chal_name, reader, writer):
-        chal = self.load_challenge(chal_name)
-        game = ServerGame(chal, TICKRATE)
-        #try:
-        await game.connect_player(reader, writer)
-        self.games.append(game)
-        await game.start()
-        #except Exception as e:
-        #    print("failed to connect player to solo game")
+    def create_game(self):
+        chal_path = CHALLENGES.joinpath("original.json")
+        chal = json.loads(chal_path.read_text())
+        name = str(len(self.games))
+        print("new game: "+name)
+        self.games[name] = ServerGame(name, chal, TICKRATE)
+        return self.games[name]
 
     async def resp(self, writer, msg):
         writer.write(msg.encode() + b'\n')
@@ -137,14 +132,34 @@ class Server:
             if not message:
                 await asyncio.sleep(0.01)
                 continue
+            print("got: "+message)
             if message.startswith("get"):
                 await self.resp(writer, self.get(message.split()[1]))
             elif message.startswith("ping"):
                 await self.resp(writer, "pong")
+            elif message.startswith("rooms"):
+                rooms = list(self.games.keys())
+                await self.resp(writer, "rooms "+json.dumps(rooms))
+            elif message.startswith("connect"):
+                split = message.split(" ")
+                if len(split) < 2: # create new room
+                    game = self.create_game()
+                else:
+                    game = self.games.get(split[1])
+                    if game is None:
+                        await self.resp(writer, "404")
+                        break
+                await game.connect_player(reader, writer)
             elif message.startswith("start"):
-                #t = Thread(target=self.start_game, args=("original.json", reader, writer,))
-                #t.start()
-                await self.start_game("original.json", reader, writer)
+                split = message.split(" ")
+                if len(split) < 2:
+                    await self.resp(writer, "400")
+                    break
+                game = self.games.get(split[1])
+                if game is None:
+                    await self.resp(writer, "404")
+                else:
+                    await game.start()
                 break
 
     async def handler(self, reader, writer):

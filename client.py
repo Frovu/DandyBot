@@ -146,6 +146,9 @@ class Client:
             self.settings["server_ip"],
             self.settings["server_port"],
             self.settings["username"])
+        self.menu.add_button("mp_new_room", "new room", lambda: self.mp_join(None))
+        self.menu.add_button("mp_refresh", "refresh", lambda: self.mp.check_rooms())
+        self.mp.check_rooms()
         def updater():
             if not self.mp: return
             while True:
@@ -159,17 +162,29 @@ class Client:
                     self.show_success(message)
                 elif type == "switch_tab":
                     self.menu.show(message)
+                elif type == "add_room":
+                    btn_name = "mp_room_"+message
+                    if self.menu.items.get(btn_name) is None:
+                        self.menu.add_button(btn_name, message, lambda: self.mp_join(message))
+                    self.menu.show("mp_server")
                 else:
                     self.show_error("unhandled mp event: "+type)
             self.root.after(50, updater)
         self.root.after(0, updater)
 
+    def mp_join(self, name):
+        if not self.mp is None:
+            self.mp.join_room(name, self.settings["bot"], self.settings["tile"])
+
     def mp_play(self):
-        if self.mp:
-            self.mp.play(self.settings["bot"], self.settings["tile"])
+        if not self.mp is None:
+            self.mp.play()
 
     def mp_disconnect(self):
-        if self.mp:
+        if not self.mp is None:
+            for i in self.menu.items:
+                if i.startswith("mp_room_"):
+                    del self.menu.items[i]
             self.mp.disconnect()
             self.mp = None
             self.show_success("Disconnected")
@@ -226,7 +241,7 @@ class Menu:
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
         self.add_button("mp_connect", "connect", client.mp_connect)
-        self.add_button("mp_play", "play", client.mp_play)
+        self.add_button("mp_play", "start", client.mp_play)
         self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]
@@ -277,6 +292,13 @@ class Menu:
             self.show_one("mp_connect")
             self.show_one("back")
         elif page == "mp_server":
+            for i in self.items:
+                if i.startswith("mp_room_"):
+                    self.show_one(i)
+            self.show_one("mp_new_room")
+            self.show_one("mp_refresh")
+            self.show_one("mp_disconnect")
+        elif page == "mp_room":
             self.show_one("mp_play")
             self.show_one("mp_disconnect")
         elif page == "settings":

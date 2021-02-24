@@ -40,13 +40,13 @@ class Multiplayer:
             self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
         except:
             return self.handle_error("Can't connect to server!")
-        self.writer.write("ping".encode())
-        await self.writer.drain()
+        await self.resp("ping")
         data = await self.reader.readline()
         print(f'Received: {data.decode()!r}')
         if data.decode() == "pong\n":
             self.queue.put(("success", "Connected!"))
             self.queue.put(("switch_tab", "mp_server"))
+            await self.listener()
         else:
             self.handle_error("Failed server handshake")
 
@@ -63,14 +63,15 @@ class Multiplayer:
                 await asyncio.sleep(.01)
                 continue
             print("got: "+message)
-            if message == "player":
-                # server requests player info
-                print(self.username)
+            if message.startswith("player"):
+                # server requests player info and sets room name
+                self.room = message.split(" ")[1]
                 await self.resp(json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
+                self.queue.put(("switch_tab", "mp_room"))
             elif message.startswith("map"):
                 # server sets current map
                 try:
@@ -96,6 +97,11 @@ class Multiplayer:
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to act: "+str(e))
+            elif message.startswith("rooms"):
+                rooms = json.loads(message[6:])
+                for room in rooms:
+                    print("room: "+room)
+                    self.queue.put(("add_room", room))
             elif message == "game_over":
                 self.board.label["text"] += "\n\nGAME OVER!"
                 await self.resp("ok")
@@ -103,36 +109,44 @@ class Multiplayer:
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
                 self.queue.put(("error", "server: bad request"))
+            elif message == "404":
+                self.queue.put(("error", "server: not found"))
             else:
-                pass
+                self.queue.put(("error", "unhandled server message"))
         print("mp listener stoped")
 
     def handle_error(self, message):
         self.queue.put(("error", message))
 
-    async def start_game(self):
-        # TODO: handle exceptions more nicely
+    async def join(self, name):
         try:
             if self.bot in sys.modules:
                  reload(sys.modules[self.bot])
             self.script = import_module(self.bot).script
         except:
             raise Exception(f"Failed to load bot: {bot}")
-        # try:
-        self.writer.write("start".encode())
+        command = "connect" + (" " + name if not name is None else "")
+        self.writer.write(command.encode())
         await self.writer.drain()
-        await self.listener()
-        # except Exception as e:
-        #     raise Exception(f"Failed to start server game:"+str(e))
 
+    async def update_rooms(self):
+        await self.resp("rooms")
 
-    def play(self, player_bot, player_tile):
+    async def start_game(self):
+        await self.resp("start "+self.room)
+
+    ############################## interface ########################################
+
+    def check_rooms(self):
+        asyncio.run_coroutine_threadsafe(self.update_rooms(), self.loop)
+
+    def join_room(self, name, player_bot, player_tile):
         self.bot = player_bot
         self.tile = player_tile
+        asyncio.run_coroutine_threadsafe(self.join(name), self.loop)
+
+    def play(self):
         asyncio.run_coroutine_threadsafe(self.start_game(), self.loop)
-
-    # async def exit_loop(self):
-
 
     def disconnect(self):
         if not self.loop.is_closed():
