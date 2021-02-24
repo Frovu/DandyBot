@@ -139,7 +139,7 @@ class Server:
                 await self.resp(writer, "pong")
             elif message.startswith("rooms"):
                 rooms = list(self.games.keys())
-                await self.resp(writer, rjson.dumps(rooms))
+                await self.resp(writer, "rooms "+json.dumps(rooms))
             elif message.startswith("connect"):
                 split = message.split(" ")
                 if len(split) < 2: # create new room

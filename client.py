@@ -147,6 +147,8 @@ class Client:
             self.settings["server_port"],
             self.settings["username"])
         self.menu.add_button("mp_new_room", "new room", lambda: self.mp_join(None))
+        self.menu.add_button("mp_refresh", "refresh", lambda: self.mp.check_rooms())
+        self.mp.check_rooms()
         def updater():
             if not self.mp: return
             while True:
@@ -161,22 +163,25 @@ class Client:
                 elif type == "switch_tab":
                     self.menu.show(message)
                 elif type == "add_room":
-                    self.add_button("mp_room_", message, lambda: self.mp_join(message))
+                    btn_name = "mp_room_"+message
+                    if self.menu.items.get(btn_name) is None:
+                        self.menu.add_button(btn_name, message, lambda: self.mp_join(message))
+                    self.menu.show("mp_server")
                 else:
                     self.show_error("unhandled mp event: "+type)
             self.root.after(50, updater)
         self.root.after(0, updater)
 
     def mp_join(self, name):
-        if self.mp:
+        if not self.mp is None:
             self.mp.join_room(name, self.settings["bot"], self.settings["tile"])
 
     def mp_play(self):
-        if self.mp:
+        if not self.mp is None:
             self.mp.play()
 
     def mp_disconnect(self):
-        if self.mp:
+        if not self.mp is None:
             for i in self.menu.items:
                 if i.startswith("mp_room_"):
                     del self.menu.items[i]
@@ -291,6 +296,7 @@ class Menu:
                 if i.startswith("mp_room_"):
                     self.show_one(i)
             self.show_one("mp_new_room")
+            self.show_one("mp_refresh")
             self.show_one("mp_disconnect")
         elif page == "mp_room":
             self.show_one("mp_play")

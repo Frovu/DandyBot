@@ -40,8 +40,7 @@ class Multiplayer:
             self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
         except:
             return self.handle_error("Can't connect to server!")
-        self.writer.write("ping".encode())
-        await self.writer.drain()
+        await self.resp("ping")
         data = await self.reader.readline()
         print(f'Received: {data.decode()!r}')
         if data.decode() == "pong\n":
@@ -98,6 +97,11 @@ class Multiplayer:
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to act: "+str(e))
+            elif message.startswith("rooms"):
+                rooms = json.loads(message[6:])
+                for room in rooms:
+                    print("room: "+room)
+                    self.queue.put(("add_room", room))
             elif message == "game_over":
                 self.board.label["text"] += "\n\nGAME OVER!"
                 await self.resp("ok")
@@ -114,11 +118,6 @@ class Multiplayer:
     def handle_error(self, message):
         self.queue.put(("error", message))
 
-    async def start_game(self):
-        command = "start "+self.room
-        self.writer.write(command.encode())
-        await self.writer.drain()
-
     async def join(self, name):
         try:
             if self.bot in sys.modules:
@@ -129,6 +128,17 @@ class Multiplayer:
         command = "connect" + (" " + name if not name is None else "")
         self.writer.write(command.encode())
         await self.writer.drain()
+
+    async def update_rooms(self):
+        await self.resp("rooms")
+
+    async def start_game(self):
+        await self.resp("start "+self.room)
+
+    ############################## interface ########################################
+
+    def check_rooms(self):
+        asyncio.run_coroutine_threadsafe(self.update_rooms(), self.loop)
 
     def join_room(self, name, player_bot, player_tile):
         self.bot = player_bot
