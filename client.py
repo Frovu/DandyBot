@@ -146,6 +146,7 @@ class Client:
             self.settings["server_ip"],
             self.settings["server_port"],
             self.settings["username"])
+        self.menu.add_button("mp_new_room", "new room", lambda: self.mp_join(None))
         def updater():
             if not self.mp: return
             while True:
@@ -235,7 +236,7 @@ class Menu:
         self.add_button("set_default", "default", client.default_settings)
         self.add_button("set_save", "save", lambda: client.save_settings(1))
         self.add_button("mp_connect", "connect", client.mp_connect)
-        self.add_button("mp_play", "play", client.mp_play)
+        self.add_button("mp_play", "start", client.mp_play)
         self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
         chal = client.settings.get("challenge")
         if chal: chal = chal.split(".")[0]

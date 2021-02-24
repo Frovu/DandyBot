@@ -64,14 +64,15 @@ class Multiplayer:
                 await asyncio.sleep(.01)
                 continue
             print("got: "+message)
-            if message == "player":
-                # server requests player info
-                print(self.username)
+            if message.startswith("player"):
+                # server requests player info and sets room name
+                self.room = message.split(" ")[1]
                 await self.resp(json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
+                self.queue.put(("switch_tab", "mp_room"))
             elif message.startswith("map"):
                 # server sets current map
                 try:
@@ -114,19 +115,18 @@ class Multiplayer:
         self.queue.put(("error", message))
 
     async def start_game(self):
-        command = "start "+name
+        command = "start "+self.room
         self.writer.write(command.encode())
         await self.writer.drain()
 
     async def join(self, name):
-        self.room = name
         try:
             if self.bot in sys.modules:
                  reload(sys.modules[self.bot])
             self.script = import_module(self.bot).script
         except:
             raise Exception(f"Failed to load bot: {bot}")
-        command = "connect "+name
+        command = "connect" + (" " + name if not name is None else "")
         self.writer.write(command.encode())
         await self.writer.drain()
 
