@@ -47,6 +47,7 @@ class Multiplayer:
         if data.decode() == "pong\n":
             self.queue.put(("success", "Connected!"))
             self.queue.put(("switch_tab", "mp_server"))
+            await self.listener()
         else:
             self.handle_error("Failed server handshake")
 
@@ -103,36 +104,39 @@ class Multiplayer:
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
                 self.queue.put(("error", "server: bad request"))
+            elif message == "404":
+                self.queue.put(("error", "server: not found"))
             else:
-                pass
+                self.queue.put(("error", "unhandled server message"))
         print("mp listener stoped")
 
     def handle_error(self, message):
         self.queue.put(("error", message))
 
     async def start_game(self):
-        # TODO: handle exceptions more nicely
+        command = "start "+name
+        self.writer.write(command.encode())
+        await self.writer.drain()
+
+    async def join(self, name):
+        self.room = name
         try:
             if self.bot in sys.modules:
                  reload(sys.modules[self.bot])
             self.script = import_module(self.bot).script
         except:
             raise Exception(f"Failed to load bot: {bot}")
-        # try:
-        self.writer.write("start".encode())
+        command = "connect "+name
+        self.writer.write(command.encode())
         await self.writer.drain()
-        await self.listener()
-        # except Exception as e:
-        #     raise Exception(f"Failed to start server game:"+str(e))
 
-
-    def play(self, player_bot, player_tile):
+    def join_room(self, name, player_bot, player_tile):
         self.bot = player_bot
         self.tile = player_tile
+        asyncio.run_coroutine_threadsafe(self.join(name), self.loop)
+
+    def play(self):
         asyncio.run_coroutine_threadsafe(self.start_game(), self.loop)
-
-    # async def exit_loop(self):
-
 
     def disconnect(self):
         if not self.loop.is_closed():
