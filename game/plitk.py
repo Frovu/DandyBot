@@ -2,12 +2,7 @@
 from pathlib import Path
 import tkinter as tk
 
-
-def load_tileset(filename):
-    tileset = json.loads(Path(filename).read_text())
-    tileset["data"] = Path(tileset["file"]).read_bytes()
-    return tileset
-
+SCALE_DIV = 100
 
 def get_tile_ppm(tileset, index):
     x = tileset["tile_width"] * (index % tileset["columns"])
@@ -19,22 +14,36 @@ def get_tile_ppm(tileset, index):
     return bytes("P6\n%d %d\n255\n" % (tileset["tile_width"],
                                        tileset["tile_height"]), "ascii") + data
 
-
 class PliTk:
     def __init__(self, canvas, x, y, cols, rows, tileset, scale):
         self.canvas = canvas
         self.x, self.y = x, y
         self.tileset = tileset
         self.scale = scale
-        self.images = []
+        self.images = dict()
         self.tiles = []
-        for i in range(tileset["size"]):
-            self.images.append(tk.PhotoImage(
-                data=get_tile_ppm(tileset, i)).zoom(scale))
+        self.load_tile_image(0)
         self.resize(cols, rows)
+
+    def load_tile_image(self, index):
+        img = tk.PhotoImage(data=get_tile_ppm(self.tileset, index))
+        if self.scale != 1.0:
+            img = img.zoom(int(self.scale * SCALE_DIV))
+            img = img.subsample(SCALE_DIV)
+        self.images[index] = img
+        return img
+
+    def rescale(self, new_scale):
+        if new_scale != self.scale:
+            self.scale = new_scale
+            for i in self.images:
+                self.load_tile_image(i)
+            self.resize(self.cols, self.rows)
 
     def resize(self, cols, rows):
         self.cols, self.rows = cols, rows
+        self.canvas.config(width=cols  * self.tileset["tile_width"]  * self.scale,
+                           height=rows * self.tileset["tile_height"] * self.scale)
         while self.tiles:
             self.canvas.delete(self.tiles.pop())
         for j in range(rows):
@@ -45,6 +54,5 @@ class PliTk:
                     image=self.images[0], anchor="nw"))
 
     def set_tile(self, x, y, index):
-        self.canvas.itemconfigure(
-            self.tiles[self.cols * y + x], image=self.images[index]
-        )
+        img = self.images.get(index) or self.load_tile_image(index)
+        self.canvas.itemconfigure(self.tiles[self.cols * y + x], image=img)
