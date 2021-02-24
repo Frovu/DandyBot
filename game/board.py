@@ -39,11 +39,13 @@ class Board:
 
     def update(self, grid, players):
         self.grid, self.players = grid, players
-        for y in range(len(grid)):
-            for x in range(len(grid[0])):
-                self.screen.set_tile(x, y, self.tiles[grid[y][x]])
+        cols, rows = len(grid[0]), len(grid)
+        tiles = [[self.tiles[grid[y][x]] for y in range(rows)] for x in range(cols)]
         for p in players:
-            self.screen.set_tile(p["x"], p["y"], p["tile"])
+            tiles[p["x"]][p["y"]] = p["tile"]
+        for y in range(rows):
+            for x in range(cols):
+                self.screen.set_tile(x, y, tiles[x][y])
         lines = []
         if self.challenge:
             lines.append("Chal: %s\nLevels total: %4d" %
