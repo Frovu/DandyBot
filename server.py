@@ -21,18 +21,19 @@ class Connection:
         message = command + ("" if object is None else (" " + json.dumps(object))) + "\n"
         self.writer.write(message.encode())
         await self.writer.drain()
-        #print("sent: "+message)
-        print("start c read")
+        if not await_resp: return True
         resp = await self.reader.read(CHUNK)
-        print("stop c read")
         resp = resp.decode()
         if not object is None and resp == "ok" or not await_resp:
             return True
-        try:
-            return json.loads(resp)
-        except:
-            await self.send_status("400")
-            raise Exception("Failed to communicate: "+command)
+        for msg in resp.split("\n"):
+            try:
+                print("lllll "+msg)
+                obj = json.loads(msg)
+                return obj
+            except:
+                await self.send_status("400")
+                print("Failed to communicate: "+command)
 
     async def send_status(self, message):
         self.writer.write(message.encode() + b'\n')
@@ -70,7 +71,11 @@ class RemotePlayer(Player, Connection):
             "level": self.game.level_index}
         await self.communicate("state", state)
         res = await self.communicate("action")
-        self.act(res["action"])
+        if res is None or res.get("action") is None:
+            print("bad action resp: "+str(res))
+            self.act("pass")
+        else:
+            self.act(res["action"])
 
 
 class ServerGame(Game):
