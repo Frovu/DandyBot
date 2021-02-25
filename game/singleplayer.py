@@ -1,3 +1,4 @@
+import importlib
 import sys
 import time
 from pathlib import Path
@@ -15,10 +16,9 @@ class Singleplayer:
         board.set_challenge(challenge)
         self.game = Game(challenge)
         # load player bot
-        if user_bot in sys.modules:
-             reload(sys.modules[user_bot])
         try:
-            script = import_module(user_bot).script
+            botmodule = importlib.machinery.SourceFileLoader(user_bot, user_bot);
+            script = botmodule.load_module().script
         except:
             raise Exception(f"Failed to load player bot")
         else:

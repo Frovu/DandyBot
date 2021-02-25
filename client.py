@@ -102,7 +102,7 @@ class Client:
         newbot = tkinter.filedialog.askopenfilename(
             initialdir=Path(ROOT, "bots"), filetypes=[("python files", "*.py")])
         if newbot and Path(newbot).exists():
-            self.settings["bot"] = Path(newbot).stem
+            self.settings["bot"] = Path(newbot).as_posix()
             self.bot_label["text"] = "bot: " + self.settings["bot"]
             self.bot_label["fg"] = GREEN
             self.save_settings(0)
