@@ -17,6 +17,7 @@ class Multiplayer:
         self.board = board
         self.server = server
         self.port = port
+        self.running = False
         self.username = username
         self.loop = loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -104,6 +105,7 @@ class Multiplayer:
                     self.queue.put(("add_room", room))
             elif message == "game_over":
                 self.board.label["text"] += "\n\nGAME OVER!"
+                self.running = False
                 await self.resp("ok")
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
@@ -133,7 +135,9 @@ class Multiplayer:
         await self.resp("rooms")
 
     async def start_game(self):
+        if self.running: return
         await self.resp("start "+self.room)
+        self.running = True
 
     ############################## interface ########################################
 

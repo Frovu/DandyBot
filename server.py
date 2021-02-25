@@ -28,7 +28,6 @@ class Connection:
             return True
         for msg in resp.split("\n"):
             try:
-                print("lllll "+msg)
                 obj = json.loads(msg)
                 return obj
             except:
