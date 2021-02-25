@@ -41,7 +41,7 @@ class Singleplayer:
             map, players = self.game.fetch()
             self.board.update(map, players)
             dt = int((time.time() - t) * 1000)
-            print(f"tick, dt/d = {dt}/{self.tick_rate}")
+            #print(f"tick, dt/d = {dt}/{self.tick_rate}")
             self.updater(int(max(self.tick_rate - dt, 0)), self.play)
         else:
             self.board.label["text"] += "\n\nGAME OVER!"

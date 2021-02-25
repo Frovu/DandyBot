@@ -1,5 +1,6 @@
 import sys
 import json
+import random
 import asyncio
 from pathlib import Path
 from random import shuffle
@@ -18,6 +19,7 @@ TAKE = "take"
 PASS = "pass"
 
 LEVEL = "level"
+PORTAL = "portal"
 PLAYER = "player"
 GOLD = "gold"
 WALL = "wall"
@@ -97,6 +99,8 @@ class Game:
             return int(item) if item.isdigit() else 0
         if cmd == PLAYER:
             return item != "#" and self.has_player[x][y]
+        if cmd == PORTAL:
+            return item == "?"
         return cmd == EMPTY
 
     # absolutely cursed method ikr
@@ -184,6 +188,14 @@ class Player:
         if gold:
             self.gold += gold
             self.game.take_gold(self.x, self.y)
+        portal = self.game.check(PORTAL, self.x, self.y)
+        if portal:
+            portals = [];
+            for i in range(len(self.game.map)):
+                for j in range(len(self.game.map[i])):
+                    if (self.game.map[i][j] == '?') & (not (i == self.x & j == self.y)):
+                        portals.append((j,i));
+            self.x, self.y = random.choice(portals);
 
 class LocalPlayer(Player):
     def __init__(self, game, name, tile, script):

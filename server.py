@@ -177,7 +177,7 @@ class ServerGame(Game):
                     for p in self.remote_players:
                         await p.conn.communicate("map", self.get_map())
                 dt = int((time.time() - t) * 1000)
-                print(f"tick, dt/d = {dt}/{self.tick_rate}")
+                #print(f"tick, dt/d = {dt}/{self.tick_rate}")
                 await asyncio.sleep(int(max(self.tick_rate - dt, 0))/1000)
             else:
                 for p in self.remote_players:
