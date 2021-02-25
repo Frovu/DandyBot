@@ -107,6 +107,11 @@ class Multiplayer:
                 self.board.label["text"] += "\n\nGAME OVER!"
                 self.running = False
                 await self.resp("ok")
+            elif message == "ping":
+                await self.resp("ok")
+            elif message == "timed_out":
+                self.queue.put(("error", "timed out from server"))
+                self.queue.put(("close", ""))
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":

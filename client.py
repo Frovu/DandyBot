@@ -158,6 +158,8 @@ class Client:
                     break
                 if type == "error":
                     self.show_error(message)
+                elif type == "close":
+                    self.mp_disconnect()
                 elif type == "success":
                     self.show_success(message)
                 elif type == "switch_tab":

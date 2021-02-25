@@ -86,7 +86,27 @@ class ServerGame(Game):
         self.loop = asyncio.new_event_loop()
         self.remote_players = []
         self.host = None
+        #asyncio.create_task(self.ping_players())
         #asyncio.set_event_loop(self.loop)
+
+    async def ping_players(self):
+        while not self.running:
+            await asyncio.sleep(3)
+            for p in list(self.remote_players):
+                try:
+                    pong = await asyncio.wait_for(p.communicate("ping"), timeout=1.0)
+                except asyncio.TimeoutError:
+                    pong = False
+                if not pong:
+                    print(f"player {p.username} timed out from game {self.name}")
+                    await p.communicate("timed_out", None, False)
+                    p.close()
+                    self.remote_players.remove(p)
+                else:
+                    print(f"ping player {p.username}: ok")
+            if len(self.remote_players) < 1:
+                print(f"closing game {self.name}, no players")
+                server.close_game(self.name)
 
     async def connect_player(self, reader, writer):
         player = RemotePlayer(self, reader, writer)
@@ -99,6 +119,7 @@ class ServerGame(Game):
 
     def stop(self):
         self.running = False
+        #asyncio.create_task(self.ping_players())
 
     async def start(self):
         self.running = True
@@ -124,6 +145,10 @@ class Server:
         self.port = port
         self.games = {}
 
+    def close_game(self, name):
+        self.games[name].loop.stop()
+        del self.games[name]
+
     def create_game(self):
         chal_path = CHALLENGES.joinpath("original.json")
         chal = json.loads(chal_path.read_text())
@@ -138,9 +163,7 @@ class Server:
 
     async def listener(self, reader, writer):
         while True:
-            print("start s read")
             data = await reader.read(CHUNK)
-            print("stop s read")
             message = data.decode()
             if not message:
                 await asyncio.sleep(0.01)
