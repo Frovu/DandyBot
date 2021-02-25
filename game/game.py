@@ -20,6 +20,8 @@ PASS = "pass"
 
 LEVEL = "level"
 PORTAL = "portal"
+KEY = "key"
+DOOR = "door"
 PLAYER = "player"
 GOLD = "gold"
 WALL = "wall"
@@ -65,6 +67,7 @@ class Game:
             self.map_tiles = None
 
         self.gold = 0
+        self.key = 0
         self.steps = 0
         self.cols, self.rows = cols, rows = len(data[0]), len(data)
         self.map = [[data[y][x] for x in range(cols)] for y in range(rows)]
@@ -101,6 +104,10 @@ class Game:
             return item != "#" and self.has_player[x][y]
         if cmd == PORTAL:
             return item == "?"
+        if cmd == KEY:
+            return item == "K"
+        if cmd == DOOR:
+            return item == "D"
         return cmd == EMPTY
 
     # absolutely cursed method ikr
@@ -179,7 +186,7 @@ class Player:
             x, y = self.x + dx, self.y + dy
             game = self.game
             game.remove_player(self)
-            if not game.check(WALL, x, y) and not game.check(PLAYER, x, y):
+            if not game.check(WALL, x, y) and not game.check(PLAYER, x, y) and ((not game.check(DOOR, x, y)) | self.game.key):
                 self.x, self.y = x, y
             game.add_player(self, self.x, self.y)
 
@@ -187,6 +194,10 @@ class Player:
         gold = self.game.check(GOLD, self.x, self.y)
         if gold:
             self.gold += gold
+            self.game.take_gold(self.x, self.y)
+        key = self.game.check(KEY, self.x, self.y)
+        if key:
+            self.game.key += 1
             self.game.take_gold(self.x, self.y)
         portal = self.game.check(PORTAL, self.x, self.y)
         if portal:

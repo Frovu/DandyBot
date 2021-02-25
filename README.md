@@ -18,12 +18,15 @@ See [random_bot.py](random_bot.py) and [user_bot.py](user_bot.py) for API exampl
 
 ## API
 Player's action is:
-+ `"take"` for taking gold from players tile
++ `"take"` for taking gold or key from player's tile or using portal at player's tile
 + `"left"`, `"right"`, `"up"`, `"down"` for moving
 + `"pass"` for doing essentially nothing
 
 Available check types are:
 + `"gold"` - returns gold amount on tile
++ `"portal"` - tells if tile is portal
++ `"key"` - tells if tile has key on it
++ `"door"` - tells if tile is door
 + `"player"` - tells if tile has player on it
 + `"wall"` - tells if tile is not impassable
 + `"level"` - returns current level number starting from 1
