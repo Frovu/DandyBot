@@ -12,6 +12,9 @@ CHUNK = 1024
 TICKRATE = 75
 CHALLENGES = Path('./game/challenges')
 
+def is_pending(future):
+    return type(future) is asyncio.Future and not (future.done() or future.cancelled())
+
 class Connection:
     def __init__(self, server, reader, writer):
         self.server = server
@@ -21,6 +24,7 @@ class Connection:
 
     def close(self):
         self.writer.close()
+
 
     async def send(self, message):
         self.writer.write(message.encode()+b'\n')
@@ -32,14 +36,15 @@ class Connection:
         if not await_resp: return True
         existing = self.futures.get(command)
         future = asyncio.get_event_loop().create_future()
-        if existing is asyncio.Future and not (existing.done() or existing.cancelled()):
+        if is_pending(existing):
             existing.cancel("overwrite")
+        print("set", [command])
         self.futures[command] = future
         return await future
 
     async def listen(self):
         while not self.writer.is_closing():
-            data = await reader.read(CHUNK)
+            data = await self.reader.read(CHUNK)
             if len(data) < 1:
                 await asyncio.sleep(0.01) # FIXME: probably unnecessary
                 continue
@@ -47,7 +52,7 @@ class Connection:
                 print("got: "+message)
                 split = message.split(" ")
                 comm_request = self.futures.get(split[0])
-                if not comm_request is None:
+                if is_pending(comm_request):
                     resp = None if len(split) < 2 else message[len(split[0])+1:]
                     comm_request.set_result(resp)
                 # elif message.startswith("get"):
@@ -58,12 +63,12 @@ class Connection:
                     rooms = list(self.server.games.keys())
                     await self.send("rooms "+json.dumps(rooms))
                 elif message.startswith("connect"):
-                    game = self.server.create_game() if len(split) < 2
-                        else self.server.games.get(split[1])
+                    game = (self.server.create_game() if len(split) < 2
+                        else self.server.games.get(split[1]))
                     if game is None:
                         await self.send("404")
-                        break
-                    await game.connect_player(self)
+                    else:
+                        asyncio.create_task(game.connect_player(self))
                 elif message.startswith("start"):
                     if len(split) < 2:
                         await self.send("400")
@@ -71,7 +76,7 @@ class Connection:
                     if game is None:
                         await self.send("404")
                     else:
-                        await game.start()
+                        asyncio.create_task(game.start())
 
 
 class RemotePlayer(Player):
@@ -81,7 +86,8 @@ class RemotePlayer(Player):
         self.username = None
 
     async def connect(self):
-        data = await self.conn.communicate("player "+self.server_game.name)
+        data = await self.conn.communicate("player", self.server_game.name)
+        print(321)
         data = json.loads(data)
         username = data.get("name")
         bot_name = data.get("bot")
