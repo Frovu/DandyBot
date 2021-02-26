@@ -72,6 +72,7 @@ class Connection:
                 elif message.startswith("start"):
                     if len(split) < 2:
                         await self.send("400")
+                    print(split[1], self.server.games)
                     game = self.server.games.get(split[1])
                     if game is None:
                         await self.send("404")
@@ -86,8 +87,7 @@ class RemotePlayer(Player):
         self.username = None
 
     async def connect(self):
-        data = await self.conn.communicate("player", self.server_game.name)
-        print(321)
+        data = await self.conn.communicate("player")
         data = json.loads(data)
         username = data.get("name")
         bot_name = data.get("bot")
@@ -98,6 +98,7 @@ class RemotePlayer(Player):
         self.username = str(username)
         Player.__init__(self, self.server_game, str(bot_name), int(bot_tile))
         await self.conn.send("200")
+        await self.conn.send("player_room "+self.server_game.name)
         await self.conn.communicate("map", self.game.get_map())
 
     async def do_action(self):

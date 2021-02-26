@@ -64,14 +64,16 @@ class Multiplayer:
                 await asyncio.sleep(.01)
                 continue
             print("got: "+message)
-            if message.startswith("player"):
+            split = message.split(" ")
+            if split[0] == "player":
                 # server requests player info and sets room name
-                self.room = message.split(" ")[1]
                 await self.resp("player "+json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
+            elif split[0] == "player_room":
+                self.room = split[1]
                 self.queue.put(("switch_tab", "mp_room"))
             elif message.startswith("map"):
                 # server sets current map
