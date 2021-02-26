@@ -17,6 +17,7 @@ class Multiplayer:
         self.board = board
         self.server = server
         self.port = port
+        self.running = False
         self.username = username
         self.loop = loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -63,29 +64,31 @@ class Multiplayer:
                 await asyncio.sleep(.01)
                 continue
             print("got: "+message)
-            if message.startswith("player"):
+            split = message.split(" ")
+            if split[0] == "player":
                 # server requests player info and sets room name
-                self.room = message.split(" ")[1]
-                await self.resp(json.dumps({
+                await self.resp("player "+json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
                 }))
+            elif split[0] == "player_room":
+                self.room = split[1]
                 self.queue.put(("switch_tab", "mp_room"))
             elif message.startswith("map"):
                 # server sets current map
                 try:
                     self.board.load(json.loads(message[4:]))
-                    await self.resp("ok")
+                    await self.resp("map")
                 except Exception as e:
-                    print(e)
+                    traceback.print_exc()
                     self.handle_error("Failed to load map")
             elif message.startswith("state"):
                 try:
                     data = json.loads(message[6:])
                     self.state = data
                     self.board.update(data["grid"], data["players"])
-                    await self.resp("ok")
+                    await self.resp("state")
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to update state")
@@ -93,7 +96,7 @@ class Multiplayer:
                 try:
                     check = Game.check_against_state(self.state)
                     action = self.script(check, self.state["x"], self.state["y"])
-                    await self.resp(json.dumps({"action": action}))
+                    await self.resp("action "+json.dumps({"action": action}))
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to act: "+str(e))
@@ -104,7 +107,12 @@ class Multiplayer:
                     self.queue.put(("add_room", room))
             elif message == "game_over":
                 self.board.label["text"] += "\n\nGAME OVER!"
-                await self.resp("ok")
+                self.running = False
+            elif message == "ping":
+                await self.resp("ping")
+            elif message == "timed_out":
+                self.queue.put(("error", "timed out from server"))
+                self.queue.put(("close", ""))
             elif message == "200":
                 self.queue.put(("success", "server: ok"))
             elif message == "400":
@@ -133,7 +141,9 @@ class Multiplayer:
         await self.resp("rooms")
 
     async def start_game(self):
+        if self.running: return
         await self.resp("start "+self.room)
+        self.running = True
 
     ############################## interface ########################################
 
