@@ -67,7 +67,7 @@ class Multiplayer:
             if message.startswith("player"):
                 # server requests player info and sets room name
                 self.room = message.split(" ")[1]
-                await self.resp(json.dumps({
+                await self.resp("player "+json.dumps({
                     "name": self.username,
                     "bot": self.bot,
                     "tile": self.tile
@@ -77,16 +77,16 @@ class Multiplayer:
                 # server sets current map
                 try:
                     self.board.load(json.loads(message[4:]))
-                    await self.resp("ok")
+                    await self.resp("map")
                 except Exception as e:
-                    print(e)
+                    traceback.print_exc()
                     self.handle_error("Failed to load map")
             elif message.startswith("state"):
                 try:
                     data = json.loads(message[6:])
                     self.state = data
                     self.board.update(data["grid"], data["players"])
-                    await self.resp("ok")
+                    await self.resp("state")
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to update state")
@@ -94,7 +94,7 @@ class Multiplayer:
                 try:
                     check = Game.check_against_state(self.state)
                     action = self.script(check, self.state["x"], self.state["y"])
-                    await self.resp(json.dumps({"action": action}))
+                    await self.resp("action "+json.dumps({"action": action}))
                 except Exception as e:
                     traceback.print_exc()
                     self.handle_error("Failed to act: "+str(e))
@@ -106,9 +106,8 @@ class Multiplayer:
             elif message == "game_over":
                 self.board.label["text"] += "\n\nGAME OVER!"
                 self.running = False
-                await self.resp("ok")
             elif message == "ping":
-                await self.resp("ok")
+                await self.resp("ping")
             elif message == "timed_out":
                 self.queue.put(("error", "timed out from server"))
                 self.queue.put(("close", ""))
