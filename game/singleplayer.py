@@ -4,7 +4,6 @@ import time
 from pathlib import Path
 import asyncio
 from game import Game, LocalPlayer
-from importlib import import_module, reload
 
 ROOT = Path(__file__).parent.parent.resolve()
 sys.path.append(str(Path(ROOT, 'bots')))
