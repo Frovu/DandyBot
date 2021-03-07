@@ -8,7 +8,7 @@ from contextlib import suppress
 from queue import Queue
 from threading import Thread
 from game import Game
-from importlib import import_module, reload
+import importlib
 
 ROOT = Path(__file__).parent.parent.resolve()
 sys.path.append(str(Path(ROOT, 'bots')))
@@ -71,7 +71,7 @@ class Multiplayer:
                 # server requests player info and sets room name
                 await self.resp("player "+json.dumps({
                     "name": self.username,
-                    "bot": self.bot,
+                    "bot": Path(self.bot).stem,
                     "tile": self.tile
                 }))
             elif split[0] == "player_room":
@@ -130,9 +130,8 @@ class Multiplayer:
 
     async def join(self, name):
         try:
-            if self.bot in sys.modules:
-                 reload(sys.modules[self.bot])
-            self.script = import_module(self.bot).script
+            botmodule = importlib.machinery.SourceFileLoader(self.bot, self.bot);
+            self.script = botmodule.load_module().script
         except:
             raise Exception(f"Failed to load bot: {bot}")
         command = "connect" + (" " + name if not name is None else "")

@@ -21,7 +21,7 @@ class Singleplayer:
         except:
             raise Exception(f"Failed to load player bot")
         else:
-            self.game.load_player(LocalPlayer(self.game, user_bot, user_tile, script))
+            self.game.load_player(LocalPlayer(self.game, Path(user_bot).stem, user_tile, script))
         self.board.load(self.game.get_map())
 
     def start(self, updater):

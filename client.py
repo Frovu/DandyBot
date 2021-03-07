@@ -59,8 +59,9 @@ class Client:
         self.bot_label = tk.Label(frame, font=("TkFixedFont",),
                          justify=tk.RIGHT, bg="gray15")
         self.bot_label.pack(side=tk.TOP, anchor="n", fill="x", pady=5)
-        self.bot_label["text"] = f"Bot: {self.settings.get('bot') or 'undefined'}"
-        self.bot_label["fg"] = GREEN if self.settings.get('bot') else "red"
+        bot = self.settings.get('bot')
+        self.bot_label["text"] = f"Bot: {Path(bot).stem if bot else 'undefined'}"
+        self.bot_label["fg"] = GREEN if bot else "red"
 
         #################### Tile selector ####################
         tile_frame = tk.Frame(frame, bg="black")
@@ -102,8 +103,8 @@ class Client:
         newbot = tkinter.filedialog.askopenfilename(
             initialdir=Path(ROOT, "bots"), filetypes=[("python files", "*.py")])
         if newbot and Path(newbot).exists():
-            self.settings["bot"] = Path(newbot).as_posix()
-            self.bot_label["text"] = "bot: " + self.settings["bot"]
+            self.settings["bot"] = Path(newbot).resolve().as_posix()
+            self.bot_label["text"] = "bot: " + Path(newbot).stem
             self.bot_label["fg"] = GREEN
             self.save_settings(0)
 
@@ -112,7 +113,7 @@ class Client:
             initialdir=CHALLENGES, filetypes=[("json files", "*.json")])
         if not chal_file: return
         chal = Path(chal_file)
-        self.settings["challenge"] = chal_file
+        self.settings["challenge"] = chal.resolve().as_posix()
         self.save_settings(0)
         label["text"] = f"Chal: {chal.stem}"
         label["fg"] = "gray60"
