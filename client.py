@@ -2,20 +2,19 @@ import sys
 import json
 import traceback
 from pathlib import Path
+ROOT = Path(__file__).parent.resolve()
 import tkinter as tk
 import tkinter.filedialog
-sys.path.insert(0, './game')
+sys.path.append(str(Path(ROOT, 'game')))
 from plitk import PliTk
 from board import Board
 from singleplayer import Singleplayer
 from multiplayer import Multiplayer
 
-DATA_DIR = Path("./game/data")
-CHALLENGES = Path("./game/challenges")
-DEFAULT_SETTINGS = Path("./default_settings.json")
-SETTINGS = Path("./settings.json")
-LAST_BOT = Path(".lastbot")
-LAST_TILE = Path(".lasttile")
+DATA_DIR = Path(ROOT, "game/data")
+CHALLENGES = Path(ROOT, "game/challenges")
+DEFAULT_SETTINGS = Path(ROOT, "default_settings.json")
+SETTINGS = Path(ROOT, "settings.json")
 
 SETTINGS_IN_MENU = { # dict of settings_name: label_text
     "tickrate": "tick, ms",
@@ -96,12 +95,12 @@ class Client:
         root.mainloop()
 
     def init_level(self):
-        map = json.loads(Path("./game/maps/starter_screen.json").read_text())
+        map = json.loads(Path(ROOT, "game/maps/starter_screen.json").read_text())
         self.board.load(map)
 
     def change_bot(self):
         newbot = tkinter.filedialog.askopenfilename(
-            initialdir=Path("bots"), filetypes=[("python files", "*.py")])
+            initialdir=Path(ROOT, "bots"), filetypes=[("python files", "*.py")])
         if newbot and Path(newbot).exists():
             self.settings["bot"] = Path(newbot).stem
             self.bot_label["text"] = "bot: " + self.settings["bot"]
@@ -113,7 +112,7 @@ class Client:
             initialdir=CHALLENGES, filetypes=[("json files", "*.json")])
         if not chal_file: return
         chal = Path(chal_file)
-        self.settings["challenge"] = chal.file
+        self.settings["challenge"] = chal_file
         self.save_settings(0)
         label["text"] = f"Chal: {chal.stem}"
         label["fg"] = "gray60"
@@ -245,8 +244,7 @@ class Menu:
         self.add_button("mp_connect", "connect", client.mp_connect)
         self.add_button("mp_play", "start", client.mp_play)
         self.add_button("mp_disconnect", "disconnect", client.mp_disconnect)
-        chal = client.settings.get("challenge")
-        if chal: chal = chal.split(".")[0]
+        chal = Path(client.settings.get("challenge")).stem
         self.items["sp_chal"] = tk.Label(frame, font=("TkFixedFont",), text="Chal: "+chal
                 ,fg="gray60" if chal else "#aa0000", bg="gray10")
         self.items["not_implemented"] = tk.Label(frame, font=("TkFixedFont",11),

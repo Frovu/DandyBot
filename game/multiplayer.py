@@ -3,13 +3,15 @@ import json
 import signal
 import asyncio
 import traceback
+from pathlib import Path
 from contextlib import suppress
 from queue import Queue
 from threading import Thread
 from game import Game
 from importlib import import_module, reload
 
-sys.path.insert(0, './bots')
+ROOT = Path(__file__).parent.parent.resolve()
+sys.path.append(str(Path(ROOT, 'bots')))
 
 class Multiplayer:
     def __init__(self, board, server, port, username):
