@@ -5,9 +5,10 @@ from pathlib import Path
 from random import shuffle
 from importlib import import_module, reload
 
-sys.path.insert(0, './bots')
+ROOT = Path(__file__).parent.parent.resolve()
+sys.path.append(str(Path(ROOT, 'bots')))
 
-MAPS_DIR = Path("./game/maps")
+MAPS_DIR = Path(ROOT, "game/maps")
 
 UP = "up"
 DOWN = "down"

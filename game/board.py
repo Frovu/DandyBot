@@ -4,7 +4,7 @@ from pathlib import Path
 import tkinter as tk
 from plitk import PliTk
 
-DEFAULT_TILES = json.loads(Path("./game/data/default_tiles.json").read_text())
+DEFAULT_TILES = json.loads(Path(Path(__file__).parent, "data/default_tiles.json").read_text())
 DEFAULT_SCALE = 1
 
 class Board:

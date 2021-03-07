@@ -1,7 +1,10 @@
 import sys
 import time
 import json
-sys.path.insert(0, './game')
+
+ROOT = Path(__file__).parent..resolve()
+sys.path.append(str(Path(ROOT, 'game')))
+
 from pathlib import Path
 from game import Game, Player
 from threading import Thread
@@ -10,7 +13,7 @@ BOT_TILE = 2128
 PLAYER_TILE = 2138
 CHUNK = 1024
 TICKRATE = 75
-CHALLENGES = Path('./game/challenges')
+CHALLENGES = Path(ROOT, 'game/challenges')
 
 def is_pending(future):
     return type(future) is asyncio.Future and not (future.done() or future.cancelled())
